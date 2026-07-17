@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import type { AdminCollection } from "@/lib/admin/collections";
 
 export function AdminCollectionsPageClient() {
+  const { hasPermission } = useAdminAccess();
   const [collections, setCollections] = useState<AdminCollection[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<AdminCollection["slug"] | "">("");
   const [draft, setDraft] = useState<AdminCollection | null>(null);
@@ -47,6 +49,10 @@ export function AdminCollectionsPageClient() {
   }, [selectedCollection]);
 
   const saveCollection = async () => {
+    if (!hasPermission("collections:manage")) {
+      return;
+    }
+
     if (!draft) {
       return;
     }
@@ -125,8 +131,8 @@ export function AdminCollectionsPageClient() {
                 <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Sort Order<input type="number" value={draft.sortOrder} onChange={(event) => setDraft((current) => current ? { ...current, sortOrder: Number(event.target.value) || 0 } : current)} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
                 <label className="flex items-center gap-2 pt-6 text-sm text-neutral-800"><input type="checkbox" checked={draft.archived} onChange={(event) => setDraft((current) => current ? { ...current, archived: event.target.checked } : current)} /> Archived</label>
               </div>
-              <button type="button" onClick={() => { void saveCollection(); }} disabled={isSaving} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">
-                {isSaving ? "Saving..." : "Save Collection"}
+              <button type="button" onClick={() => { void saveCollection(); }} disabled={isSaving || !hasPermission("collections:manage")} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">
+                {isSaving ? "Saving..." : hasPermission("collections:manage") ? "Save Collection" : "View only"}
               </button>
             </div>
           ) : (

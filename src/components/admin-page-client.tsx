@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import {
   type ConsultationStatus,
   type ConsultationSubmission,
@@ -48,6 +49,7 @@ function StatusButton({
 }
 
 export function AdminPageClient() {
+  const { hasPermission } = useAdminAccess();
   const [submissions, setSubmissions] = useState<ConsultationSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -136,6 +138,10 @@ export function AdminPageClient() {
   }, [submissions]);
 
   const setStatus = async (id: string, status: ConsultationStatus) => {
+    if (!hasPermission("consultations:manage")) {
+      return;
+    }
+
     const response = await fetch("/api/admin/consultations", {
       method: "PATCH",
       headers: {
@@ -230,6 +236,9 @@ export function AdminPageClient() {
                       <StatusButton label="in-progress" isActive={submission.status === "in-progress"} onClick={() => setStatus(submission.id, "in-progress")} />
                       <StatusButton label="confirmed" isActive={submission.status === "confirmed"} onClick={() => setStatus(submission.id, "confirmed")} />
                     </div>
+                    {!hasPermission("consultations:manage") ? (
+                      <p className="mt-3 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">View only</p>
+                    ) : null}
                   </div>
                 ))}
               </div>

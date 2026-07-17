@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import {
   productionStageOrder,
   stageRank,
@@ -17,6 +18,7 @@ function nextProductionStage(stage: ProductionStage) {
 }
 
 export function AdminProductionPageClient() {
+  const { hasPermission } = useAdminAccess();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -54,6 +56,10 @@ export function AdminProductionPageClient() {
   }, []);
 
   const advanceOrderStage = async (order: AdminOrder) => {
+    if (!hasPermission("production:manage")) {
+      return;
+    }
+
     const nextStage = nextProductionStage(order.productionStage);
 
     const response = await fetch("/api/admin/orders", {
@@ -114,10 +120,10 @@ export function AdminProductionPageClient() {
                     onClick={() => {
                       void advanceOrderStage(order);
                     }}
-                    disabled={order.productionStage === "complete"}
+                    disabled={order.productionStage === "complete" || !hasPermission("production:manage")}
                     className="rounded-full border border-black bg-black px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-200 disabled:text-neutral-600"
                   >
-                    {order.productionStage === "complete" ? "Completed" : "Advance to next stage"}
+                    {order.productionStage === "complete" ? "Completed" : hasPermission("production:manage") ? "Advance to next stage" : "View only"}
                   </button>
                 </div>
 

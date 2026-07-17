@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { adminNavItems } from "@/lib/admin/navigation";
+import { adminNavItems, getAdminSectionPermission } from "@/lib/admin/navigation";
 import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 import { hasAdminPermission } from "@/lib/admin/team";
 
@@ -13,14 +13,7 @@ export async function GET() {
 
   const allowedSections = adminNavItems
     .filter((item) => {
-      return hasAdminPermission(adminCheck.permissions, item.section === "dashboard" ? "dashboard:view" : undefined) || item.section !== "dashboard";
-    })
-    .filter((item) => {
-      if (item.section === "dashboard") {
-        return hasAdminPermission(adminCheck.permissions, "dashboard:view");
-      }
-
-      return true;
+      return hasAdminPermission(adminCheck.permissions, getAdminSectionPermission(item.section));
     })
     .map((item) => item.section);
 

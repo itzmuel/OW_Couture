@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import { defaultHomepageContent, type HomepageContent } from "@/lib/admin/website";
 
 export function AdminWebsitePageClient() {
+  const { hasPermission } = useAdminAccess();
   const [homepage, setHomepage] = useState<HomepageContent>(defaultHomepageContent);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +46,10 @@ export function AdminWebsitePageClient() {
   }, []);
 
   const saveContent = async () => {
+    if (!hasPermission("website:manage")) {
+      return;
+    }
+
     setIsSaving(true);
     const response = await fetch("/api/admin/site-content", {
       method: "PATCH",
@@ -116,8 +122,8 @@ export function AdminWebsitePageClient() {
               Contact Body
               <textarea rows={4} value={homepage.contactBody} onChange={(event) => setHomepage((current) => ({ ...current, contactBody: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" />
             </label>
-            <button type="button" onClick={() => { void saveContent(); }} disabled={isSaving} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">
-              {isSaving ? "Saving..." : "Save Homepage Content"}
+            <button type="button" onClick={() => { void saveContent(); }} disabled={isSaving || !hasPermission("website:manage")} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">
+              {isSaving ? "Saving..." : hasPermission("website:manage") ? "Save Homepage Content" : "View only"}
             </button>
           </div>
         )}

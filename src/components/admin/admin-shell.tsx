@@ -1,38 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { adminNavItems } from "@/lib/admin/navigation";
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [allowedSections, setAllowedSections] = useState<Array<string>>([]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadAccess = async () => {
-      const response = await fetch("/api/admin/access", {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      const payload = (await response.json()) as { allowedSections?: string[] };
-      if (!isMounted) {
-        return;
-      }
-
-      setAllowedSections(payload.allowedSections ?? []);
-    };
-
-    void loadAccess();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { allowedSections } = useAdminAccess();
 
   const visibleNavItems = useMemo(() => {
     if (allowedSections.length === 0) {

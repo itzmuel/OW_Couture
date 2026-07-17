@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import { formatPaymentMoney, type AdminPaymentsPayload } from "@/lib/admin/payments";
 
 function formatDate(value: string) {
@@ -20,6 +21,7 @@ function formatDate(value: string) {
 const paymentActions = ["paid", "pending", "refunded", "cancelled"] as const;
 
 export function AdminPaymentsPageClient() {
+  const { hasPermission } = useAdminAccess();
   const [data, setData] = useState<AdminPaymentsPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +52,10 @@ export function AdminPaymentsPageClient() {
   }, []);
 
   const updatePaymentStatus = async (orderId: string, paymentStatus: (typeof paymentActions)[number]) => {
+    if (!hasPermission("payments:manage")) {
+      return;
+    }
+
     setIsUpdatingOrderId(orderId);
     const response = await fetch("/api/admin/orders", {
       method: "PATCH",
@@ -145,7 +151,7 @@ export function AdminPaymentsPageClient() {
                           <button
                             key={status}
                             type="button"
-                            disabled={isUpdatingOrderId === payment.orderId}
+                            disabled={isUpdatingOrderId === payment.orderId || !hasPermission("payments:manage")}
                             onClick={() => {
                               void updatePaymentStatus(payment.orderId, status);
                             }}

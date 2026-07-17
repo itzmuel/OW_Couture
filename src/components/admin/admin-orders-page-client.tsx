@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import { toStageLabel, type AdminOrder, type AdminOrderAction } from "@/lib/admin/orders";
 import { products } from "@/data/products";
 
@@ -60,6 +61,7 @@ function parseProductPrice(priceFrom: string) {
 }
 
 export function AdminOrdersPageClient() {
+  const { hasPermission } = useAdminAccess();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -160,6 +162,10 @@ export function AdminOrdersPageClient() {
   }, [selectedOrder]);
 
   const applyAction = async (action: AdminOrderAction) => {
+    if (!hasPermission("orders:manage")) {
+      return;
+    }
+
     if (!selectedOrder) {
       return;
     }
@@ -231,6 +237,10 @@ export function AdminOrdersPageClient() {
   };
 
   const saveItemDrafts = async () => {
+    if (!hasPermission("orders:manage")) {
+      return;
+    }
+
     if (!selectedOrder) {
       return;
     }
@@ -260,6 +270,10 @@ export function AdminOrdersPageClient() {
   };
 
   const saveOrderDetails = async () => {
+    if (!hasPermission("orders:manage")) {
+      return;
+    }
+
     if (!selectedOrder) {
       return;
     }
@@ -310,6 +324,10 @@ export function AdminOrdersPageClient() {
   };
 
   const createOrder = async () => {
+    if (!hasPermission("orders:manage")) {
+      return;
+    }
+
     setIsCreatingOrder(true);
     const today = new Date().toISOString().slice(0, 10);
     const response = await fetch("/api/admin/orders", {
@@ -358,10 +376,10 @@ export function AdminOrdersPageClient() {
             onClick={() => {
               void createOrder();
             }}
-            disabled={isCreatingOrder}
+            disabled={isCreatingOrder || !hasPermission("orders:manage")}
             className="rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300"
           >
-            {isCreatingOrder ? "Creating..." : "Create order"}
+            {isCreatingOrder ? "Creating..." : hasPermission("orders:manage") ? "Create order" : "View only"}
           </button>
         </div>
       </header>
@@ -510,10 +528,10 @@ export function AdminOrdersPageClient() {
                   onClick={() => {
                     void saveOrderDetails();
                   }}
-                  disabled={isSavingOrder}
+                  disabled={isSavingOrder || !hasPermission("orders:manage")}
                   className="rounded-full border border-black bg-black px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300"
                 >
-                  {isSavingOrder ? "Saving..." : "Save order details"}
+                  {isSavingOrder ? "Saving..." : hasPermission("orders:manage") ? "Save order details" : "View only"}
                 </button>
               </div>
 
@@ -589,6 +607,7 @@ export function AdminOrdersPageClient() {
                       <button
                         type="button"
                         onClick={() => removeItemDraft(item.id)}
+                        disabled={!hasPermission("orders:manage")}
                         className="rounded-full border border-black px-3 py-2 text-xs uppercase tracking-[0.08em] text-neutral-900 transition hover:bg-black hover:text-white"
                       >
                         Remove
@@ -600,6 +619,7 @@ export function AdminOrdersPageClient() {
                   <button
                     type="button"
                     onClick={addItemDraft}
+                    disabled={!hasPermission("orders:manage")}
                     className="rounded-full border border-black px-3 py-1.5 text-xs uppercase tracking-[0.08em] text-neutral-900 transition hover:bg-black hover:text-white"
                   >
                     Add product
@@ -609,10 +629,10 @@ export function AdminOrdersPageClient() {
                     onClick={() => {
                       void saveItemDrafts();
                     }}
-                    disabled={isSavingItems}
+                    disabled={isSavingItems || !hasPermission("orders:manage")}
                     className="rounded-full border border-black bg-black px-3 py-1.5 text-xs uppercase tracking-[0.08em] text-white disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:border-neutral-300"
                   >
-                    {isSavingItems ? "Saving..." : "Save products"}
+                    {isSavingItems ? "Saving..." : hasPermission("orders:manage") ? "Save products" : "View only"}
                   </button>
                 </div>
                 <p className="font-medium text-neutral-900">Uploaded Inspiration</p>
@@ -637,6 +657,7 @@ export function AdminOrdersPageClient() {
                       onClick={() => {
                         void applyAction(item.action);
                       }}
+                      disabled={!hasPermission("orders:manage")}
                       className="rounded-full border border-black px-3 py-1.5 text-xs uppercase tracking-[0.08em] text-neutral-900 transition hover:bg-black hover:text-white"
                     >
                       {item.label}

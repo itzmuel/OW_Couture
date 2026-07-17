@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import type { AdminProduct } from "@/lib/admin/products";
 
 const emptyProduct: AdminProduct = {
@@ -25,6 +26,7 @@ const emptyProduct: AdminProduct = {
 };
 
 export function AdminProductsPageClient() {
+  const { hasPermission } = useAdminAccess();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [selectedSlug, setSelectedSlug] = useState("");
   const [draft, setDraft] = useState<AdminProduct>(emptyProduct);
@@ -75,6 +77,10 @@ export function AdminProductsPageClient() {
   };
 
   const saveProduct = async () => {
+    if (!hasPermission("products:manage")) {
+      return;
+    }
+
     setIsSaving(true);
     const response = await fetch("/api/admin/products", {
       method: selectedProduct ? "PATCH" : "POST",
@@ -112,8 +118,8 @@ export function AdminProductsPageClient() {
               Manage couture product records, descriptions, pricing copy, media links, and merchandising flags.
             </p>
           </div>
-          <button type="button" onClick={startCreating} className="rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white">
-            Add product
+          <button type="button" onClick={startCreating} disabled={!hasPermission("products:manage")} className="rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">
+            {hasPermission("products:manage") ? "Add product" : "View only"}
           </button>
         </div>
       </header>
@@ -178,8 +184,8 @@ export function AdminProductsPageClient() {
               <label className="flex items-center gap-2"><input type="checkbox" checked={draft.featured} onChange={(event) => setDraft((current) => ({ ...current, featured: event.target.checked }))} /> Featured</label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={draft.archived} onChange={(event) => setDraft((current) => ({ ...current, archived: event.target.checked }))} /> Archived</label>
             </div>
-            <button type="button" onClick={() => { void saveProduct(); }} disabled={isSaving} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">
-              {isSaving ? "Saving..." : selectedProduct && !isCreating ? "Save Product" : "Create Product"}
+            <button type="button" onClick={() => { void saveProduct(); }} disabled={isSaving || !hasPermission("products:manage")} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">
+              {isSaving ? "Saving..." : !hasPermission("products:manage") ? "View only" : selectedProduct && !isCreating ? "Save Product" : "Create Product"}
             </button>
           </div>
         </section>

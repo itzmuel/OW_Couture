@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useAdminAccess } from "@/components/admin/use-admin-access";
 import type { AdminTeamMember } from "@/lib/admin/team";
 
 const emptyMember: AdminTeamMember = {
@@ -13,6 +14,7 @@ const emptyMember: AdminTeamMember = {
 };
 
 export function AdminTeamPageClient() {
+  const { hasPermission } = useAdminAccess();
   const [members, setMembers] = useState<AdminTeamMember[]>([]);
   const [draft, setDraft] = useState<AdminTeamMember>(emptyMember);
   const [errorMessage, setErrorMessage] = useState("");
@@ -40,6 +42,10 @@ export function AdminTeamPageClient() {
   }, []);
 
   const saveMember = async () => {
+    if (!hasPermission("team:manage")) {
+      return;
+    }
+
     setIsSaving(true);
     const response = await fetch("/api/admin/team", {
       method: "POST",
@@ -109,7 +115,7 @@ export function AdminTeamPageClient() {
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Role<select value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value as AdminTeamMember["role"] }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900"><option>Admin</option><option>Manager</option><option>Tailor</option><option>Customer Service</option></select></label>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Permissions (one per line)<textarea rows={6} value={draft.permissions.join("\n")} onChange={(event) => setDraft((current) => ({ ...current, permissions: event.target.value.split("\n").map((item) => item.trim()).filter(Boolean) }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="flex items-center gap-2 text-sm text-neutral-800"><input type="checkbox" checked={draft.active} onChange={(event) => setDraft((current) => ({ ...current, active: event.target.checked }))} /> Active</label>
-            <button type="button" onClick={() => { void saveMember(); }} disabled={isSaving} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">{isSaving ? "Saving..." : "Save Team Member"}</button>
+            <button type="button" onClick={() => { void saveMember(); }} disabled={isSaving || !hasPermission("team:manage")} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">{isSaving ? "Saving..." : hasPermission("team:manage") ? "Save Team Member" : "View only"}</button>
           </div>
         </section>
       </div>
