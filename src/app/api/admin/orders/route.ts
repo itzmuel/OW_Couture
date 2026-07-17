@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 
 import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 import {
@@ -197,6 +198,13 @@ export async function PATCH(request: Request) {
     status?: string;
     paymentStatus?: string;
     productionStage?: string;
+    items?: Array<{
+      id?: string;
+      productSlug?: string;
+      productName?: string;
+      quantity?: number;
+      unitPrice?: number;
+    }>;
   };
 
   if (!payload.id) {
@@ -217,6 +225,23 @@ export async function PATCH(request: Request) {
 
   if (payload.productionStage && !isProductionStage(payload.productionStage)) {
     return NextResponse.json({ message: "Invalid production stage provided." }, { status: 400 });
+  }
+
+  if (payload.items) {
+    const hasInvalidItem = payload.items.some((item) => {
+      return (
+        !item.productSlug ||
+        !item.productName ||
+        typeof item.quantity !== "number" ||
+        item.quantity <= 0 ||
+        typeof item.unitPrice !== "number" ||
+        item.unitPrice < 0
+      );
+    });
+
+    if (hasInvalidItem) {
+      return NextResponse.json({ message: "Each order item needs product, quantity, and unit price." }, { status: 400 });
+    }
   }
 
   const adminClient = createSupabaseAdminClient();
@@ -277,17 +302,59 @@ export async function PATCH(request: Request) {
     nextStage = payload.productionStage;
   }
 
+  const updatePayload: {
+    status: OrderStatus;
+    payment_status: PaymentStatus;
+    production_stage: ProductionStage;
+    total_amount?: number;
+  } = {
+    status: nextStatus,
+    payment_status: nextPaymentStatus,
+    production_stage: nextStage,
+  };
+
+  if (payload.items) {
+    updatePayload.total_amount = payload.items.reduce((sum, item) => {
+      return sum + (item.quantity ?? 0) * (item.unitPrice ?? 0);
+    }, 0);
+  }
+
   const { error: updateError } = await adminClient
     .from("orders")
-    .update({
-      status: nextStatus,
-      payment_status: nextPaymentStatus,
-      production_stage: nextStage,
-    })
+    .update(updatePayload)
     .eq("id", payload.id);
 
   if (updateError) {
     return NextResponse.json({ message: updateError.message }, { status: 500 });
+  }
+
+  if (payload.items) {
+    const { error: deleteItemsError } = await adminClient
+      .from("order_items")
+      .delete()
+      .eq("order_id", payload.id);
+
+    if (deleteItemsError) {
+      return NextResponse.json({ message: deleteItemsError.message }, { status: 500 });
+    }
+
+    if (payload.items.length > 0) {
+      const replacementItems = payload.items.map((item) => {
+        return {
+          id: item.id && item.id.startsWith("temp-") ? randomUUID() : item.id ?? randomUUID(),
+          order_id: payload.id,
+          product_slug: item.productSlug,
+          product_name: item.productName,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+        };
+      });
+
+      const { error: insertItemsError } = await adminClient.from("order_items").insert(replacementItems);
+      if (insertItemsError) {
+        return NextResponse.json({ message: insertItemsError.message }, { status: 500 });
+      }
+    }
   }
 
   const syncError = await syncProductionEvents(payload.id, nextStage);

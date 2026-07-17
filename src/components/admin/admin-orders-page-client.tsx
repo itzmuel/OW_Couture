@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { toStageLabel, type AdminOrder, type AdminOrderAction } from "@/lib/admin/orders";
+import { products } from "@/data/products";
+
+type EditableItem = {
+  id: string;
+  productSlug: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+};
 
 function formatCurrency(value: number, currency: string) {
   return new Intl.NumberFormat("en-CA", {
@@ -34,11 +43,18 @@ const actions: Array<{ action: AdminOrderAction; label: string }> = [
   { action: "cancel", label: "Cancel" },
 ];
 
+function parseProductPrice(priceFrom: string) {
+  const parsed = Number(priceFrom.replace(/[^0-9.]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function AdminOrdersPageClient() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [itemDrafts, setItemDrafts] = useState<EditableItem[]>([]);
+  const [isSavingItems, setIsSavingItems] = useState(false);
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -80,6 +96,25 @@ export function AdminOrdersPageClient() {
     return orders.find((item) => item.id === selectedOrderId) ?? null;
   }, [orders, selectedOrderId]);
 
+  useEffect(() => {
+    if (!selectedOrder) {
+      setItemDrafts([]);
+      return;
+    }
+
+    setItemDrafts(
+      selectedOrder.items.map((item) => {
+        return {
+          id: item.id,
+          productSlug: item.productSlug,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        };
+      }),
+    );
+  }, [selectedOrder]);
+
   const applyAction = async (action: AdminOrderAction) => {
     if (!selectedOrder) {
       return;
@@ -100,6 +135,83 @@ export function AdminOrdersPageClient() {
     }
 
     setErrorMessage("");
+    await loadOrders();
+  };
+
+  const addItemDraft = () => {
+    const fallbackProduct = products[0];
+    setItemDrafts((current) => {
+      return [
+        ...current,
+        {
+          id: `temp-${crypto.randomUUID()}`,
+          productSlug: fallbackProduct.slug,
+          productName: fallbackProduct.name,
+          quantity: 1,
+          unitPrice: parseProductPrice(fallbackProduct.priceFrom),
+        },
+      ];
+    });
+  };
+
+  const updateItemDraft = (id: string, updates: Partial<EditableItem>) => {
+    setItemDrafts((current) => {
+      return current.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+
+        return {
+          ...item,
+          ...updates,
+        };
+      });
+    });
+  };
+
+  const changeItemProduct = (id: string, productSlug: string) => {
+    const selectedProduct = products.find((product) => product.slug === productSlug);
+    if (!selectedProduct) {
+      return;
+    }
+
+    updateItemDraft(id, {
+      productSlug: selectedProduct.slug,
+      productName: selectedProduct.name,
+      unitPrice: parseProductPrice(selectedProduct.priceFrom),
+    });
+  };
+
+  const removeItemDraft = (id: string) => {
+    setItemDrafts((current) => current.filter((item) => item.id !== id));
+  };
+
+  const saveItemDrafts = async () => {
+    if (!selectedOrder) {
+      return;
+    }
+
+    setIsSavingItems(true);
+    const response = await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: selectedOrder.id,
+        items: itemDrafts,
+      }),
+    });
+
+    const payload = (await response.json()) as { message?: string };
+    if (!response.ok) {
+      setErrorMessage(payload.message ?? "Unable to save order items.");
+      setIsSavingItems(false);
+      return;
+    }
+
+    setErrorMessage("");
+    setIsSavingItems(false);
     await loadOrders();
   };
 
@@ -208,15 +320,74 @@ export function AdminOrdersPageClient() {
 
               <div className="grid gap-2 rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">
                 <p className="font-medium text-neutral-900">Products Ordered</p>
-                {selectedOrder.items.length === 0 ? (
-                  <p>No line items added yet.</p>
-                ) : (
-                  selectedOrder.items.map((item) => (
-                    <p key={item.id}>
-                      {item.productName} x {item.quantity} ({formatCurrency(item.unitPrice, selectedOrder.currency)} each)
-                    </p>
-                  ))
-                )}
+                {itemDrafts.length === 0 ? <p>No line items added yet.</p> : null}
+                <div className="grid gap-3">
+                  {itemDrafts.map((item) => (
+                    <div key={item.id} className="grid gap-2 rounded-2xl border border-[var(--line)] p-3 sm:grid-cols-[1.5fr_0.7fr_0.8fr_auto] sm:items-end">
+                      <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                        Product
+                        <select
+                          value={item.productSlug}
+                          onChange={(event) => changeItemProduct(item.id, event.target.value)}
+                          className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                        >
+                          {products.map((product) => (
+                            <option key={product.slug} value={product.slug}>
+                              {product.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                        Quantity
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.quantity}
+                          onChange={(event) => updateItemDraft(item.id, { quantity: Math.max(1, Number(event.target.value) || 1) })}
+                          className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                        />
+                      </label>
+                      <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                        Unit Price
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={item.unitPrice}
+                          onChange={(event) => updateItemDraft(item.id, { unitPrice: Math.max(0, Number(event.target.value) || 0) })}
+                          className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeItemDraft(item.id)}
+                        className="rounded-full border border-black px-3 py-2 text-xs uppercase tracking-[0.08em] text-neutral-900 transition hover:bg-black hover:text-white"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={addItemDraft}
+                    className="rounded-full border border-black px-3 py-1.5 text-xs uppercase tracking-[0.08em] text-neutral-900 transition hover:bg-black hover:text-white"
+                  >
+                    Add product
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void saveItemDrafts();
+                    }}
+                    disabled={isSavingItems}
+                    className="rounded-full border border-black bg-black px-3 py-1.5 text-xs uppercase tracking-[0.08em] text-white disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:border-neutral-300"
+                  >
+                    {isSavingItems ? "Saving..." : "Save products"}
+                  </button>
+                </div>
                 <p className="font-medium text-neutral-900">Uploaded Inspiration</p>
                 {selectedOrder.inspirationUrls.length === 0 ? (
                   <p>No inspiration links added.</p>
