@@ -17,6 +17,12 @@ function nextProductionStage(stage: ProductionStage) {
   return productionStageOrder[nextIndex];
 }
 
+function previousProductionStage(stage: ProductionStage) {
+  const currentIndex = stageRank(stage);
+  const previousIndex = Math.max(currentIndex - 1, 0);
+  return productionStageOrder[previousIndex];
+}
+
 export function AdminProductionPageClient() {
   const { hasPermission } = useAdminAccess();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -79,6 +85,30 @@ export function AdminProductionPageClient() {
     await loadOrders();
   };
 
+  const revertOrderStage = async (order: AdminOrder) => {
+    if (!hasPermission("production:manage")) {
+      return;
+    }
+
+    const previousStage = previousProductionStage(order.productionStage);
+
+    const response = await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: order.id, productionStage: previousStage }),
+    });
+
+    const payload = (await response.json()) as { message?: string };
+    if (!response.ok) {
+      setErrorMessage(payload.message ?? "Unable to move production stage backward.");
+      return;
+    }
+
+    await loadOrders();
+  };
+
   return (
     <div className="grid gap-6">
       <header className="rounded-[30px] border border-[var(--line)] bg-white p-6 sm:p-8">
@@ -115,16 +145,28 @@ export function AdminProductionPageClient() {
                     <h3 className="mt-1 text-xl tracking-[-0.03em] text-neutral-950">{order.customerName}</h3>
                     <p className="text-sm text-neutral-700">Current stage: {stageLabel}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void advanceOrderStage(order);
-                    }}
-                    disabled={order.productionStage === "complete" || !hasPermission("production:manage")}
-                    className="rounded-full border border-black bg-black px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-200 disabled:text-neutral-600"
-                  >
-                    {order.productionStage === "complete" ? "Completed" : hasPermission("production:manage") ? "Advance to next stage" : "View only"}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void revertOrderStage(order);
+                      }}
+                      disabled={currentRank === 0 || !hasPermission("production:manage")}
+                      className="rounded-full border border-black bg-white px-4 py-2 text-sm text-neutral-900 transition hover:-translate-y-0.5 hover:bg-black hover:text-white hover:shadow-[0_10px_24px_rgba(0,0,0,0.14)] disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:shadow-none"
+                    >
+                      {hasPermission("production:manage") ? "Go back a step" : "View only"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void advanceOrderStage(order);
+                      }}
+                      disabled={order.productionStage === "complete" || !hasPermission("production:manage")}
+                      className="rounded-full border border-black bg-black px-4 py-2 text-sm text-white transition hover:-translate-y-0.5 hover:bg-neutral-900 hover:shadow-[0_10px_24px_rgba(0,0,0,0.18)] disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-200 disabled:text-neutral-600 disabled:shadow-none"
+                    >
+                      {order.productionStage === "complete" ? "Completed" : hasPermission("production:manage") ? "Advance to next stage" : "View only"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
