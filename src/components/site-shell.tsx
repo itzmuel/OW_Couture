@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { CartBubble } from "@/components/cart-bubble";
 import { filterAdminLinks } from "@/lib/navigation/link-visibility";
-import { getNavigation, searchablePages } from "@/lib/navigation/site-links";
+import { footerContent, getNavigation, searchablePages, wishlistLinks } from "@/lib/navigation/site-links";
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -330,15 +330,18 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               Your saved pieces will appear here. For now, use the collection pages to explore and customize looks.
             </p>
             <div className="mt-6 grid gap-3">
-              <Link href="/collections/wedding" onClick={() => setIsWishlistOpen(false)} className="rounded-full border border-black bg-black px-4 py-2.5 text-center text-sm text-white">
-                Browse Wedding
-              </Link>
-              <Link href="/collections/rtw" onClick={() => setIsWishlistOpen(false)} className="rounded-full border border-black bg-white px-4 py-2.5 text-center text-sm text-black">
-                Browse RTW
-              </Link>
-              <Link href="/collections/evening" onClick={() => setIsWishlistOpen(false)} className="rounded-full border border-black bg-white px-4 py-2.5 text-center text-sm text-black">
-                Browse Evening
-              </Link>
+              {wishlistLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsWishlistOpen(false)}
+                  className={`rounded-full border border-black px-4 py-2.5 text-center text-sm ${
+                    link.variant === "primary" ? "bg-black text-white" : "bg-white text-black"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </aside>
         </div>
@@ -347,21 +350,23 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-[var(--line)] bg-[var(--soft)]">
         <div className="mx-auto grid w-full max-w-[1180px] gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">OW Couture</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">{footerContent.brandLabel}</p>
             <h2 className="mt-4 max-w-lg text-4xl leading-[0.95] tracking-[-0.055em] text-neutral-950 sm:text-5xl">
-              Made to order. Made for you.
+              {footerContent.heading}
             </h2>
           </div>
           <div className="grid gap-6 text-sm leading-7 text-neutral-700 sm:grid-cols-2">
             <div>
-              <p className="font-medium text-neutral-950">Studio</p>
-              <p className="mt-2">Refined bridal, ready-to-wear, bridesmaids, and evening pieces created through a personal made-to-order process.</p>
+              <p className="font-medium text-neutral-950">{footerContent.studioTitle}</p>
+              <p className="mt-2">{footerContent.studioDescription}</p>
             </div>
             <div>
-              <p className="font-medium text-neutral-950">Digital touchpoints</p>
-              <p className="mt-2">hello@owcouture.com</p>
-              <p>info@owcouture.com</p>
-              <p>@OWCouture</p>
+              <p className="font-medium text-neutral-950">{footerContent.digitalTitle}</p>
+              {footerContent.digitalTouchpoints.map((item, index) => (
+                <p key={item} className={index === 0 ? "mt-2" : undefined}>
+                  {item}
+                </p>
+              ))}
             </div>
           </div>
         </div>

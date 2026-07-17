@@ -9,6 +9,21 @@ export type SearchPageLink = {
   href: string;
 };
 
+export type WishlistLink = {
+  label: string;
+  href: string;
+  variant: "primary" | "secondary";
+};
+
+export type FooterContent = {
+  brandLabel: string;
+  heading: string;
+  studioTitle: string;
+  studioDescription: string;
+  digitalTitle: string;
+  digitalTouchpoints: string[];
+};
+
 const homeNav: NavItem[] = [
   { href: "/#home", label: "Home", match: (pathname) => pathname === "/" },
   { href: "/#collections", label: "Collections", match: () => false },
@@ -82,3 +97,19 @@ export const searchablePages: SearchPageLink[] = [
   { label: "Log in", href: "/auth/login" },
   { label: "Sign up", href: "/auth/signup" },
 ];
+
+export const wishlistLinks: WishlistLink[] = [
+  { label: "Browse Wedding", href: "/collections/wedding", variant: "primary" },
+  { label: "Browse RTW", href: "/collections/rtw", variant: "secondary" },
+  { label: "Browse Evening", href: "/collections/evening", variant: "secondary" },
+];
+
+export const footerContent: FooterContent = {
+  brandLabel: "OW Couture",
+  heading: "Made to order. Made for you.",
+  studioTitle: "Studio",
+  studioDescription:
+    "Refined bridal, ready-to-wear, bridesmaids, and evening pieces created through a personal made-to-order process.",
+  digitalTitle: "Digital touchpoints",
+  digitalTouchpoints: ["hello@owcouture.com", "info@owcouture.com", "@OWCouture"],
+};
