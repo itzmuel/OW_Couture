@@ -89,20 +89,67 @@ const searchablePages = [
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const navigation = getNavigation(pathname);
   const { currentUser, isReady, logOut } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasAdminAccess, setHasAdminAccess] = useState(pathname.startsWith("/admin"));
+
+  useEffect(() => {
+    if (!currentUser) {
+      setHasAdminAccess(pathname.startsWith("/admin"));
+      return;
+    }
+
+    let isMounted = true;
+
+    const checkAdminAccess = async () => {
+      const response = await fetch("/api/admin/access", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const payload = (await response.json()) as { isAdmin?: boolean };
+      if (!isMounted) {
+        return;
+      }
+
+      setHasAdminAccess(Boolean(payload.isAdmin));
+    };
+
+    void checkAdminAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser, pathname]);
+
+  const navigation = useMemo(() => {
+    const rawNavigation = getNavigation(pathname);
+
+    if (hasAdminAccess) {
+      return rawNavigation;
+    }
+
+    return rawNavigation.filter((item) => item.href !== "/admin");
+  }, [hasAdminAccess, pathname]);
+
+  const searchableItems = useMemo(() => {
+    if (hasAdminAccess) {
+      return searchablePages;
+    }
+
+    return searchablePages.filter((page) => page.href !== "/admin");
+  }, [hasAdminAccess]);
 
   const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) {
-      return searchablePages;
+      return searchableItems;
     }
 
-    return searchablePages.filter((page) => page.label.toLowerCase().includes(query));
-  }, [searchQuery]);
+    return searchableItems.filter((page) => page.label.toLowerCase().includes(query));
+  }, [searchQuery, searchableItems]);
 
   useEffect(() => {
     if (!isSearchOpen && !isWishlistOpen) {
