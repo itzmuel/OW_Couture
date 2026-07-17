@@ -6,7 +6,7 @@ import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 type AllowedStatus = "new" | "in-progress" | "confirmed";
 
 export async function GET() {
-  const authResult = await ensureAdminUser();
+  const authResult = await ensureAdminUser("consultations:view");
   if (!authResult.ok) {
     return NextResponse.json({ message: authResult.message }, { status: authResult.status });
   }
@@ -25,7 +25,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const authResult = await ensureAdminUser();
+  const authResult = await ensureAdminUser("consultations:manage");
   if (!authResult.ok) {
     return NextResponse.json({ message: authResult.message }, { status: authResult.status });
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -7,6 +8,39 @@ import { adminNavItems } from "@/lib/admin/navigation";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [allowedSections, setAllowedSections] = useState<Array<string>>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAccess = async () => {
+      const response = await fetch("/api/admin/access", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const payload = (await response.json()) as { allowedSections?: string[] };
+      if (!isMounted) {
+        return;
+      }
+
+      setAllowedSections(payload.allowedSections ?? []);
+    };
+
+    void loadAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const visibleNavItems = useMemo(() => {
+    if (allowedSections.length === 0) {
+      return adminNavItems;
+    }
+
+    return adminNavItems.filter((item) => allowedSections.includes(item.section));
+  }, [allowedSections]);
 
   return (
     <main className="border-b border-[var(--line)] bg-[var(--soft)] py-10 sm:py-12">
@@ -17,7 +51,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Business management system for couture operations.</p>
 
           <nav className="mt-5 grid gap-1">
-            {adminNavItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/admin" && pathname.startsWith(item.href));

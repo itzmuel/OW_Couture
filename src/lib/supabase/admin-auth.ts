@@ -1,4 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { defaultRolePermissions, hasAdminPermission, type AdminPermission, type AdminTeamMember } from "@/lib/admin/team";
 
 type AdminAuthFailure = {
   ok: false;
@@ -9,6 +11,16 @@ type AdminAuthFailure = {
 type AdminAuthSuccess = {
   ok: true;
   email: string;
+  role: AdminTeamMember["role"];
+  permissions: string[];
+};
+
+type TeamRow = {
+  email: string;
+  full_name: string;
+  role: AdminTeamMember["role"];
+  permissions: string[];
+  active: boolean;
 };
 
 export function getAllowedAdminEmails() {
@@ -32,7 +44,7 @@ export function isAdminListConfigured() {
   return getAllowedAdminEmails().length > 0;
 }
 
-export async function ensureAdminUser(): Promise<AdminAuthFailure | AdminAuthSuccess> {
+export async function ensureAdminUser(requiredPermission?: AdminPermission): Promise<AdminAuthFailure | AdminAuthSuccess> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -64,8 +76,45 @@ export async function ensureAdminUser(): Promise<AdminAuthFailure | AdminAuthSuc
     };
   }
 
+  const adminClient = createSupabaseAdminClient();
+  const { data: teamMemberData, error: teamMemberError } = await adminClient
+    .from("admin_team_members")
+    .select("email,full_name,role,permissions,active")
+    .eq("email", user.email.toLowerCase())
+    .maybeSingle();
+
+  if (teamMemberError) {
+    return {
+      ok: false,
+      status: 500,
+      message: teamMemberError.message,
+    };
+  }
+
+  const teamMember = teamMemberData as TeamRow | null;
+  const role = teamMember?.role ?? "Admin";
+  const permissions = teamMember?.permissions?.length ? teamMember.permissions : defaultRolePermissions[role];
+
+  if (teamMember && !teamMember.active) {
+    return {
+      ok: false,
+      status: 403,
+      message: "Your admin access is inactive.",
+    };
+  }
+
+  if (!hasAdminPermission(permissions, requiredPermission)) {
+    return {
+      ok: false,
+      status: 403,
+      message: "You do not have permission to access this admin section.",
+    };
+  }
+
   return {
     ok: true,
     email: user.email,
+    role,
+    permissions,
   };
 }

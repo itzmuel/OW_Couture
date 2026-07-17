@@ -3,19 +3,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ProductCard } from "@/components/product-card";
-import { getProductBySlug, products } from "@/data/products";
+import { getCatalogProductBySlug, getCatalogProducts } from "@/lib/catalog/products";
 
 type ProductDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
 
 export async function generateStaticParams() {
+  const products = await getCatalogProducts();
   return products.map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({ params }: ProductDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getCatalogProductBySlug(slug);
 
   if (!product) {
     return {
@@ -31,13 +32,13 @@ export async function generateMetadata({ params }: ProductDetailPageProps): Prom
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getCatalogProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const relatedProducts = products.filter((item) => item.slug !== product.slug).slice(0, 3);
+  const relatedProducts = (await getCatalogProducts()).filter((item) => item.slug !== product.slug).slice(0, 3);
 
   return (
     <main>

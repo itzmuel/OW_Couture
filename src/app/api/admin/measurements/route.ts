@@ -13,7 +13,7 @@ type OrderMeasurementRow = {
 };
 
 export async function GET() {
-  const adminCheck = await ensureAdminUser();
+  const adminCheck = await ensureAdminUser("measurements:view");
   if (!adminCheck.ok) {
     return NextResponse.json({ message: adminCheck.message }, { status: adminCheck.status });
   }

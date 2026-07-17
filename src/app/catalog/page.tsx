@@ -1,37 +1,28 @@
 import type { Metadata } from "next";
 
 import { ProductCard } from "@/components/product-card";
-import { getProductsByCollection, products } from "@/data/products";
+import { getCatalogCollections } from "@/lib/catalog/collections";
+import { getCatalogProducts, getCatalogProductsByCollection } from "@/lib/catalog/products";
 
 export const metadata: Metadata = {
   title: "Catalog | OW Couture",
   description: "Browse made-to-order eveningwear, bridal pieces, and tailored looks from OW Couture.",
 };
 
-export default function CatalogPage() {
-  const sections = [
-    {
-      id: "wedding",
-      eyebrow: "Wedding Dresses",
-      title: "A gown with your name in the details.",
-      description: "Choose Order, Bespoke Service, or Customize. Additional measurements will be taken during your consultation.",
-      products: getProductsByCollection("Wedding Dresses"),
-    },
-    {
-      id: "rtw",
-      eyebrow: "RTW Collection",
-      title: "Ready-to-wear, made slowly.",
-      description: "Pre-order refined silhouettes or customize measurements before checkout.",
-      products: getProductsByCollection("RTW Collection"),
-    },
-    {
-      id: "evening",
-      eyebrow: "Bridesmaids & Evening",
-      title: "Elegant pieces for moments that last.",
-      description: "Pre-order or customize selected occasionwear. Consultation is recommended for complex bridal-party orders.",
-      products: getProductsByCollection("Bridesmaids & Evening"),
-    },
-  ];
+export default async function CatalogPage() {
+  const products = await getCatalogProducts();
+  const collections = await getCatalogCollections();
+  const sections = await Promise.all(
+    collections.map(async (collection) => {
+      return {
+        id: collection.slug,
+        eyebrow: collection.eyebrow,
+        title: collection.title,
+        description: collection.description,
+        products: await getCatalogProductsByCollection(collection.label as "Wedding Dresses" | "RTW Collection" | "Bridesmaids & Evening"),
+      };
+    }),
+  );
 
   return (
     <main>

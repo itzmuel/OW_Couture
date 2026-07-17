@@ -5,7 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 
 export async function GET() {
-  const adminCheck = await ensureAdminUser();
+  const adminCheck = await ensureAdminUser("website:view");
   if (!adminCheck.ok) {
     return NextResponse.json({ message: adminCheck.message }, { status: adminCheck.status });
   }
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const adminCheck = await ensureAdminUser();
+  const adminCheck = await ensureAdminUser("website:manage");
   if (!adminCheck.ok) {
     return NextResponse.json({ message: adminCheck.message }, { status: adminCheck.status });
   }

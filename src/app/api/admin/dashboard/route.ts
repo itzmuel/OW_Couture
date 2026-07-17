@@ -38,7 +38,7 @@ function formatWeekLabel(value: Date) {
 }
 
 export async function GET() {
-  const adminCheck = await ensureAdminUser();
+  const adminCheck = await ensureAdminUser("dashboard:view");
   if (!adminCheck.ok) {
     return NextResponse.json({ message: adminCheck.message }, { status: adminCheck.status });
   }

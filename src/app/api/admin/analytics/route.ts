@@ -29,7 +29,7 @@ function monthLabel(date: Date) {
 }
 
 export async function GET() {
-  const adminCheck = await ensureAdminUser();
+  const adminCheck = await ensureAdminUser("analytics:view");
   if (!adminCheck.ok) {
     return NextResponse.json({ message: adminCheck.message }, { status: adminCheck.status });
   }

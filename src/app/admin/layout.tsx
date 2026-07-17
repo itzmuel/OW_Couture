@@ -6,7 +6,7 @@ import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const adminCheck = await ensureAdminUser();
+  const adminCheck = await ensureAdminUser("dashboard:view");
 
   if (!adminCheck.ok) {
     if (adminCheck.status === 401) {
