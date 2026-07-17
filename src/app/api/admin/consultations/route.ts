@@ -1,55 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 
 type AllowedStatus = "new" | "in-progress" | "confirmed";
-
-function getAllowedAdminEmails() {
-  const rawValue = process.env.ADMIN_EMAILS ?? "";
-
-  return rawValue
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-async function ensureAdminUser() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user?.email) {
-    return {
-      ok: false as const,
-      status: 401,
-      message: "Authentication required.",
-    };
-  }
-
-  const allowedEmails = getAllowedAdminEmails();
-  if (allowedEmails.length === 0) {
-    return {
-      ok: false as const,
-      status: 500,
-      message: "ADMIN_EMAILS is not configured.",
-    };
-  }
-
-  if (!allowedEmails.includes(user.email.toLowerCase())) {
-    return {
-      ok: false as const,
-      status: 403,
-      message: "You are not allowed to access admin data.",
-    };
-  }
-
-  return {
-    ok: true as const,
-  };
-}
 
 export async function GET() {
   const authResult = await ensureAdminUser();
