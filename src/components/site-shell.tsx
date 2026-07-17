@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/auth-context";
 import { CartBubble } from "@/components/cart-bubble";
+import { filterAdminLinks } from "@/lib/navigation/link-visibility";
 
 type NavItem = {
   href: string;
@@ -125,21 +126,11 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }, [currentUser, pathname]);
 
   const navigation = useMemo(() => {
-    const rawNavigation = getNavigation(pathname);
-
-    if (hasAdminAccess) {
-      return rawNavigation;
-    }
-
-    return rawNavigation.filter((item) => item.href !== "/admin");
+    return filterAdminLinks(getNavigation(pathname), hasAdminAccess);
   }, [hasAdminAccess, pathname]);
 
   const searchableItems = useMemo(() => {
-    if (hasAdminAccess) {
-      return searchablePages;
-    }
-
-    return searchablePages.filter((page) => page.href !== "/admin");
+    return filterAdminLinks(searchablePages, hasAdminAccess);
   }, [hasAdminAccess]);
 
   const searchResults = useMemo(() => {
