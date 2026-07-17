@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { AdminCustomersPageClient } from "@/components/admin/admin-customers-page-client";
 import { AdminOrdersPageClient } from "@/components/admin/admin-orders-page-client";
 import { AdminProductionPageClient } from "@/components/admin/admin-production-page-client";
 import { AdminPageClient } from "@/components/admin-page-client";
@@ -27,6 +28,10 @@ export default async function AdminSectionRoute({
 
   if (section === "production") {
     return <AdminProductionPageClient />;
+  }
+
+  if (section === "customers") {
+    return <AdminCustomersPageClient />;
   }
 
   return <AdminSectionPage section={section} />;
