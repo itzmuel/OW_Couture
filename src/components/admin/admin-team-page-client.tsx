@@ -26,6 +26,7 @@ export function AdminTeamPageClient() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState("");
 
   const groupedPermissions = useMemo(() => {
     return [
@@ -81,7 +82,11 @@ export function AdminTeamPageClient() {
       return;
     }
 
-    setMembers(payload.members ?? []);
+    const nextMembers = payload.members ?? [];
+    setMembers(nextMembers);
+    if (nextMembers.length > 0 && !nextMembers.some((member) => member.email === selectedEmail)) {
+      setSelectedEmail(nextMembers[0].email);
+    }
     setErrorMessage("");
     setIsLoading(false);
   };
@@ -89,6 +94,19 @@ export function AdminTeamPageClient() {
   useEffect(() => {
     void loadMembers();
   }, []);
+
+  useEffect(() => {
+    if (!selectedEmail) {
+      return;
+    }
+
+    const selectedMember = members.find((member) => member.email === selectedEmail);
+    if (!selectedMember) {
+      return;
+    }
+
+    setDraft(selectedMember);
+  }, [members, selectedEmail]);
 
   const saveMember = async () => {
     if (!hasPermission("team:manage")) {
@@ -109,9 +127,15 @@ export function AdminTeamPageClient() {
     }
 
     setDraft(emptyMember);
+    setSelectedEmail("");
     setErrorMessage("");
     setIsSaving(false);
     await loadMembers();
+  };
+
+  const startNewMember = () => {
+    setSelectedEmail("");
+    setDraft(emptyMember);
   };
 
   const applyRolePreset = (role: AdminTeamMember["role"]) => {
@@ -167,7 +191,7 @@ export function AdminTeamPageClient() {
                 {isLoading ? (
                   <tr><td colSpan={4} className="px-2 py-6 text-sm text-[var(--muted)]">Loading team...</td></tr>
                 ) : members.map((member) => (
-                  <tr key={member.email} className="border-b border-[var(--line)]">
+                  <tr key={member.email} className={`cursor-pointer border-b border-[var(--line)] transition hover:bg-[var(--soft)] ${selectedEmail === member.email ? "bg-[var(--soft)]" : ""}`} onClick={() => setSelectedEmail(member.email)}>
                     <td className="px-2 py-3">
                       <p className="font-medium text-neutral-900">{member.fullName}</p>
                       <p className="text-xs text-neutral-600">{member.email}</p>
@@ -184,6 +208,12 @@ export function AdminTeamPageClient() {
 
         <section className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
           <div className="grid gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-medium text-neutral-900">{selectedEmail ? "Edit Team Member" : "Add Team Member"}</p>
+              <button type="button" onClick={startNewMember} className="rounded-full border border-black px-3 py-1 text-xs uppercase tracking-[0.08em] text-neutral-900 transition hover:bg-black hover:text-white">
+                New Member
+              </button>
+            </div>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Full Name<input value={draft.fullName} onChange={(event) => setDraft((current) => ({ ...current, fullName: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Email<input type="email" value={draft.email} onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Role<select value={draft.role} onChange={(event) => applyRolePreset(event.target.value as AdminTeamMember["role"])} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900"><option>Admin</option><option>Manager</option><option>Tailor</option><option>Customer Service</option></select></label>
@@ -225,7 +255,7 @@ export function AdminTeamPageClient() {
               )}
             </div>
             <label className="flex items-center gap-2 text-sm text-neutral-800"><input type="checkbox" checked={draft.active} onChange={(event) => setDraft((current) => ({ ...current, active: event.target.checked }))} /> Active</label>
-            <button type="button" onClick={() => { void saveMember(); }} disabled={isSaving || !hasPermission("team:manage")} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">{isSaving ? "Saving..." : hasPermission("team:manage") ? "Save Team Member" : "View only"}</button>
+            <button type="button" onClick={() => { void saveMember(); }} disabled={isSaving || !hasPermission("team:manage")} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">{isSaving ? "Saving..." : hasPermission("team:manage") ? selectedEmail ? "Update Team Member" : "Save Team Member" : "View only"}</button>
           </div>
         </section>
       </div>
