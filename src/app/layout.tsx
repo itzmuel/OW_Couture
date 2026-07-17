@@ -6,6 +6,7 @@ import {
 
 import "./globals.css";
 
+import { AuthProvider } from "@/components/auth-context";
 import { CartProvider } from "@/components/cart-context";
 import { CustomizationDrawerProvider } from "@/components/customization-drawer-context";
 import { SiteShell } from "@/components/site-shell";
@@ -60,11 +61,13 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${cormorant.variable} antialiased bg-[#F8F6F2] text-[#171717]`}
       >
-        <CartProvider>
-          <CustomizationDrawerProvider>
-            <SiteShell>{children}</SiteShell>
-          </CustomizationDrawerProvider>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <CustomizationDrawerProvider>
+              <SiteShell>{children}</SiteShell>
+            </CustomizationDrawerProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

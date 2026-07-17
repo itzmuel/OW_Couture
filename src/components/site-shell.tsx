@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useAuth } from "@/components/auth-context";
 import { CartBubble } from "@/components/cart-bubble";
 
 type NavItem = {
@@ -45,6 +46,13 @@ const adminNav: NavItem[] = [
   { href: "/admin", label: "Admin", match: (pathname) => pathname.startsWith("/admin") },
 ];
 
+const accountNav: NavItem[] = [
+  { href: "/", label: "Home", match: (pathname) => pathname === "/" },
+  { href: "/catalog", label: "Catalog", match: (pathname) => pathname.startsWith("/catalog") },
+  { href: "/consultation", label: "Consultation", match: (pathname) => pathname === "/consultation" },
+  { href: "/account", label: "Account", match: (pathname) => pathname.startsWith("/account") },
+];
+
 function getNavigation(pathname: string): NavItem[] {
   if (pathname.startsWith("/collections/")) {
     return collectionNav;
@@ -56,6 +64,10 @@ function getNavigation(pathname: string): NavItem[] {
 
   if (pathname.startsWith("/admin")) {
     return adminNav;
+  }
+
+  if (pathname.startsWith("/account") || pathname.startsWith("/auth/")) {
+    return accountNav;
   }
 
   return homeNav;
@@ -70,11 +82,15 @@ const searchablePages = [
   { label: "Catalog", href: "/catalog" },
   { label: "Consultation", href: "/consultation" },
   { label: "Admin", href: "/admin" },
+  { label: "Account", href: "/account" },
+  { label: "Log in", href: "/auth/login" },
+  { label: "Sign up", href: "/auth/signup" },
 ];
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const navigation = getNavigation(pathname);
+  const { currentUser, isReady, logOut } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -211,6 +227,31 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
             <div className="flex items-center gap-3 text-sm text-neutral-900 sm:gap-4">
+              {isReady ? (
+                currentUser ? (
+                  <>
+                    <Link href="/account" className="hidden rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium transition hover:border-black sm:inline">
+                      {currentUser.name.split(" ")[0]}
+                    </Link>
+                    <button
+                      type="button"
+                      className="hidden rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium transition hover:border-black sm:inline"
+                      onClick={logOut}
+                    >
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/auth/login" className="hidden rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium transition hover:border-black sm:inline">
+                      Log in
+                    </Link>
+                    <Link href="/auth/signup" className="hidden rounded-full bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:bg-neutral-900 sm:inline">
+                      Sign up
+                    </Link>
+                  </>
+                )
+              ) : null}
               <button
                 type="button"
                 aria-label="Search"

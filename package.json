@@ -13,6 +13,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
@@ -24,6 +26,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.10",
+    "supabase": "^2.109.1",
     "tailwindcss": "^4.3.2",
     "typescript": "^6.0.3"
   }
