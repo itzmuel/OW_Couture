@@ -40,7 +40,16 @@ type EventRow = {
   completed_at: string | null;
 };
 
-function toAdminOrder(row: OrderRow, events: EventRow[]): AdminOrder {
+type ItemRow = {
+  id: string;
+  order_id: string;
+  product_slug: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+};
+
+function toAdminOrder(row: OrderRow, events: EventRow[], items: ItemRow[]): AdminOrder {
   return {
     id: row.id,
     customerName: row.customer_name,
@@ -63,6 +72,15 @@ function toAdminOrder(row: OrderRow, events: EventRow[]): AdminOrder {
         stage,
         completed: matching?.completed ?? false,
         completedAt: matching?.completed_at ?? null,
+      };
+    }),
+    items: items.map((item) => {
+      return {
+        id: item.id,
+        productSlug: item.product_slug,
+        productName: item.product_name,
+        quantity: item.quantity,
+        unitPrice: Number(item.unit_price ?? 0),
       };
     }),
   };
@@ -124,16 +142,27 @@ export async function GET() {
     return NextResponse.json({ orders: [] as AdminOrder[] });
   }
 
-  const { data: eventData, error: eventError } = await adminClient
-    .from("order_production_events")
-    .select("order_id,stage,completed,completed_at")
-    .in(
-      "order_id",
-      rows.map((row) => row.id),
-    );
+  const orderIds = rows.map((row) => row.id);
+  const [eventsResult, itemsResult] = await Promise.all([
+    adminClient
+      .from("order_production_events")
+      .select("order_id,stage,completed,completed_at")
+      .in("order_id", orderIds),
+    adminClient
+      .from("order_items")
+      .select("id,order_id,product_slug,product_name,quantity,unit_price")
+      .in("order_id", orderIds),
+  ]);
+
+  const { data: eventData, error: eventError } = eventsResult;
 
   if (eventError) {
     return NextResponse.json({ message: eventError.message }, { status: 500 });
+  }
+
+  const { data: itemData, error: itemError } = itemsResult;
+  if (itemError) {
+    return NextResponse.json({ message: itemError.message }, { status: 500 });
   }
 
   const eventsByOrder = new Map<string, EventRow[]>();
@@ -144,7 +173,15 @@ export async function GET() {
     eventsByOrder.set(typedRow.order_id, existing);
   });
 
-  const orders = rows.map((row) => toAdminOrder(row, eventsByOrder.get(row.id) ?? []));
+  const itemsByOrder = new Map<string, ItemRow[]>();
+  (itemData ?? []).forEach((itemRow) => {
+    const typedRow = itemRow as ItemRow;
+    const existing = itemsByOrder.get(typedRow.order_id) ?? [];
+    existing.push(typedRow);
+    itemsByOrder.set(typedRow.order_id, existing);
+  });
+
+  const orders = rows.map((row) => toAdminOrder(row, eventsByOrder.get(row.id) ?? [], itemsByOrder.get(row.id) ?? []));
   return NextResponse.json({ orders });
 }
 

@@ -4,6 +4,7 @@ import {
   formatMoney,
   type AdminDashboardPayload,
   type DashboardConsultationRow,
+  type DashboardOrderItemRow,
   type DashboardOrderRow,
 } from "@/lib/admin/dashboard";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -43,7 +44,11 @@ export async function GET() {
   }
 
   const adminClient = createSupabaseAdminClient();
-  const [{ data: ordersData, error: ordersError }, { data: consultationsData, error: consultationsError }] =
+  const [
+    { data: ordersData, error: ordersError },
+    { data: consultationsData, error: consultationsError },
+    { data: orderItemsData, error: orderItemsError },
+  ] =
     await Promise.all([
       adminClient
         .from("orders")
@@ -53,6 +58,9 @@ export async function GET() {
         .from("consultation_submissions")
         .select("id,email,requested_date,status,created_at")
         .order("created_at", { ascending: false }),
+      adminClient
+        .from("order_items")
+        .select("product_slug,product_name,quantity"),
     ]);
 
   if (ordersError) {
@@ -63,8 +71,13 @@ export async function GET() {
     return NextResponse.json({ message: consultationsError.message }, { status: 500 });
   }
 
+  if (orderItemsError) {
+    return NextResponse.json({ message: orderItemsError.message }, { status: 500 });
+  }
+
   const orders = (ordersData ?? []) as DashboardOrderRow[];
   const consultations = (consultationsData ?? []) as DashboardConsultationRow[];
+  const orderItems = (orderItemsData ?? []) as DashboardOrderItemRow[];
 
   const now = new Date();
   const todayStart = startOfDay(now);
@@ -150,6 +163,26 @@ export async function GET() {
     return Array.from(emailCounts.values()).filter((count) => count > 1).length;
   });
 
+  const topSellingMap = new Map<string, { productName: string; quantity: number }>();
+  orderItems.forEach((item) => {
+    const existing = topSellingMap.get(item.product_slug) ?? {
+      productName: item.product_name,
+      quantity: 0,
+    };
+    existing.quantity += item.quantity;
+    topSellingMap.set(item.product_slug, existing);
+  });
+
+  const topSellingItems = Array.from(topSellingMap.values())
+    .sort((left, right) => right.quantity - left.quantity)
+    .slice(0, 5);
+
+  const topSellingSeries = topSellingItems.length > 0 ? topSellingItems.map((item) => item.quantity) : [0, 0, 0, 0, 0];
+  const topSellingSubtitle =
+    topSellingItems.length > 0
+      ? topSellingItems.map((item) => item.productName).join(" / ")
+      : "No order items yet";
+
   const payload: AdminDashboardPayload = {
     greetingName: "Olivia",
     summaryCards: [
@@ -164,13 +197,14 @@ export async function GET() {
     chartTiles: [
       { title: "Revenue", values: revenueSeries, subtitle: `Weeks of ${formatWeekLabel(weekStarts[0])} to ${formatWeekLabel(weekStarts[7])}` },
       { title: "Monthly Orders", values: monthlyOrdersSeries, subtitle: "Weekly order intake" },
+      { title: "Top Selling Dresses", values: topSellingSeries, subtitle: topSellingSubtitle },
       { title: "Consultations", values: consultationsSeries, subtitle: "Weekly consultation demand" },
       { title: "Orders In Production", values: productionSeries, subtitle: "Weekly production load" },
       { title: "Returning Customers", values: returningCustomersSeries, subtitle: "Customers with repeat weekly orders" },
     ],
     notes: [
-      "Top-selling dresses will become available once order line items are stored separately from orders.",
       "Recent Requests currently reflects consultation activity in the last 7 days.",
+      topSellingItems.length === 0 ? "Add order_items records to orders to populate product sales analytics." : "Top-selling dresses are ranked by total line-item quantity.",
     ],
   };
 

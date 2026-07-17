@@ -46,6 +46,14 @@ export type ProductionEvent = {
   completedAt: string | null;
 };
 
+export type OrderItem = {
+  id: string;
+  productSlug: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+};
+
 export type AdminOrder = {
   id: string;
   customerName: string;
@@ -63,6 +71,7 @@ export type AdminOrder = {
   createdAt: string;
   updatedAt: string;
   events: ProductionEvent[];
+  items: OrderItem[];
 };
 
 export function isProductionStage(value: string): value is ProductionStage {

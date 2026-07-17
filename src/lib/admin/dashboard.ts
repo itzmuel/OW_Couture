@@ -36,6 +36,12 @@ export type DashboardConsultationRow = {
   created_at: string;
 };
 
+export type DashboardOrderItemRow = {
+  product_slug: string;
+  product_name: string;
+  quantity: number;
+};
+
 export function formatMoney(value: number, currency = "CAD") {
   return new Intl.NumberFormat("en-CA", {
     style: "currency",

@@ -206,6 +206,29 @@ export function AdminOrdersPageClient() {
                 <p>{selectedOrder.shippingAddress || "Shipping address not added yet."}</p>
               </div>
 
+              <div className="grid gap-2 rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">
+                <p className="font-medium text-neutral-900">Products Ordered</p>
+                {selectedOrder.items.length === 0 ? (
+                  <p>No line items added yet.</p>
+                ) : (
+                  selectedOrder.items.map((item) => (
+                    <p key={item.id}>
+                      {item.productName} x {item.quantity} ({formatCurrency(item.unitPrice, selectedOrder.currency)} each)
+                    </p>
+                  ))
+                )}
+                <p className="font-medium text-neutral-900">Uploaded Inspiration</p>
+                {selectedOrder.inspirationUrls.length === 0 ? (
+                  <p>No inspiration links added.</p>
+                ) : (
+                  selectedOrder.inspirationUrls.map((url) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer" className="underline">
+                      {url}
+                    </a>
+                  ))
+                )}
+              </div>
+
               <div className="grid gap-2">
                 <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Actions</p>
                 <div className="flex flex-wrap gap-2">
