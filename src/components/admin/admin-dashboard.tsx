@@ -1,22 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-const summaryCards = [
-  { label: "Today's Revenue", value: "$8,450" },
-  { label: "Orders Awaiting Review", value: "12" },
-  { label: "Consultations Today", value: "4" },
-  { label: "Orders In Production", value: "38" },
-  { label: "Ready for Pickup", value: "6" },
-  { label: "Pending Payments", value: "3" },
-  { label: "Recent Messages", value: "8" },
-];
-
-const chartTiles = [
-  { title: "Revenue", values: [20, 30, 25, 45, 50, 62, 56, 70] },
-  { title: "Monthly Orders", values: [8, 10, 7, 14, 16, 13, 18, 19] },
-  { title: "Top Selling Dresses", values: [12, 22, 18, 27, 30, 26, 34, 36] },
-  { title: "Consultations", values: [6, 8, 7, 10, 9, 12, 11, 14] },
-  { title: "Returning Customers", values: [4, 5, 6, 5, 8, 7, 9, 10] },
-];
+import type { AdminDashboardPayload } from "@/lib/admin/dashboard";
 
 const quickActions = [
   { label: "Review Orders", href: "/admin/orders" },
@@ -26,45 +13,114 @@ const quickActions = [
 ];
 
 export function AdminDashboard() {
+  const [dashboard, setDashboard] = useState<AdminDashboardPayload | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboard = async () => {
+      setIsLoading(true);
+      const response = await fetch("/api/admin/dashboard", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const payload = (await response.json()) as AdminDashboardPayload & { message?: string };
+      if (!isMounted) {
+        return;
+      }
+
+      if (!response.ok) {
+        setErrorMessage(payload.message ?? "Unable to load dashboard metrics.");
+        setDashboard(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setErrorMessage("");
+      setDashboard(payload);
+      setIsLoading(false);
+    };
+
+    void loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <div className="grid gap-6">
       <header className="rounded-[30px] border border-[var(--line)] bg-white p-6 sm:p-8">
         <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Dashboard</p>
-        <h2 className="mt-2 text-[clamp(30px,4vw,52px)] leading-[1] tracking-[-0.05em] text-neutral-950">Good morning, Olivia</h2>
+        <h2 className="mt-2 text-[clamp(30px,4vw,52px)] leading-[1] tracking-[-0.05em] text-neutral-950">
+          Good morning, {dashboard?.greetingName ?? "Olivia"}
+        </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)] sm:text-base">
           This command center tracks revenue, orders, production flow, consultations, and customer engagement in one place.
         </p>
       </header>
 
+      {errorMessage ? (
+        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>
+      ) : null}
+
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((item) => (
+        {(dashboard?.summaryCards ?? []).map((item) => (
           <article key={item.label} className="rounded-[24px] border border-[var(--line)] bg-white p-4">
             <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">{item.label}</p>
             <p className="mt-3 text-3xl tracking-[-0.04em] text-neutral-950">{item.value}</p>
           </article>
         ))}
+        {isLoading
+          ? Array.from({ length: 3 }).map((_, index) => (
+              <article key={`loading-card-${index}`} className="rounded-[24px] border border-[var(--line)] bg-white p-4">
+                <div className="h-3 w-28 rounded bg-neutral-200" />
+                <div className="mt-4 h-8 w-20 rounded bg-neutral-200" />
+              </article>
+            ))
+          : null}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        {chartTiles.map((tile) => (
+        {(dashboard?.chartTiles ?? []).map((tile) => {
+          const maxValue = Math.max(...tile.values, 1);
+
+          return (
           <article key={tile.title} className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-lg tracking-[-0.03em] text-neutral-950">{tile.title}</h3>
-              <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Last 8 weeks</p>
+              <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">{tile.subtitle}</p>
             </div>
             <div className="mt-5 flex h-32 items-end gap-2">
               {tile.values.map((value, index) => (
                 <div
                   key={`${tile.title}-${index}`}
                   className="min-w-0 flex-1 rounded-t-lg bg-black/85"
-                  style={{ height: `${Math.max(value, 8)}%` }}
+                  style={{ height: `${Math.max((value / maxValue) * 100, value > 0 ? 8 : 2)}%` }}
                   title={`${tile.title}: ${value}`}
                 />
               ))}
             </div>
           </article>
-        ))}
+          );
+        })}
       </section>
+
+      {dashboard?.notes?.length ? (
+        <section className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
+          <h3 className="text-xl tracking-[-0.03em] text-neutral-950">Operational notes</h3>
+          <div className="mt-4 grid gap-3">
+            {dashboard.notes.map((note) => (
+              <p key={note} className="rounded-2xl border border-[var(--line)] px-4 py-3 text-sm text-[var(--muted)]">
+                {note}
+              </p>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
