@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useAuth } from "@/components/auth-context";
 import {
   addConsultationSubmission,
   type ConsultationSubmission,
@@ -48,6 +49,9 @@ function formatTime(timeValue: string) {
 
 export function BookingForm() {
   const [submission, setSubmission] = useState<BookingSubmission | null>(null);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currentUser } = useAuth();
 
   if (submission) {
     return (
@@ -80,11 +84,14 @@ export function BookingForm() {
   return (
     <form
       className="grid gap-6 rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-5 sm:p-7"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
+        setIsSubmitting(true);
+        setSubmitError("");
 
         const formData = new FormData(event.currentTarget);
-        const createdSubmission = addConsultationSubmission({
+        const createdSubmission = await addConsultationSubmission({
+          userId: currentUser?.id ?? null,
           name: String(formData.get("name") ?? "").trim(),
           email: String(formData.get("email") ?? "").trim(),
           phone: String(formData.get("phone") ?? "").trim(),
@@ -94,7 +101,14 @@ export function BookingForm() {
           request: String(formData.get("request") ?? "").trim(),
         } satisfies ConsultationSubmissionInput);
 
-        setSubmission(createdSubmission);
+        if (!createdSubmission.ok) {
+          setSubmitError(createdSubmission.message);
+          setIsSubmitting(false);
+          return;
+        }
+
+        setSubmission(createdSubmission.submission);
+        setIsSubmitting(false);
         event.currentTarget.reset();
       }}
     >
@@ -181,10 +195,13 @@ export function BookingForm() {
           placeholder="Wedding date, style preferences, fabric ideas, inspiration, or special requests"
         />
       </label>
+      {submitError ? (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{submitError}</p>
+      ) : null}
       <div className="flex flex-col gap-4 border-t border-[var(--line)] pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-6 text-[var(--muted)]">$50 non-refundable fee required to lock your appointment.</p>
-        <button type="submit" className="w-full rounded-full border border-black bg-black px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-900 sm:w-auto">
-          Pay $50 &amp; Book
+        <button type="submit" disabled={isSubmitting} className="w-full rounded-full border border-black bg-black px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto">
+          {isSubmitting ? "Submitting..." : "Pay $50 & Book"}
         </button>
       </div>
     </form>

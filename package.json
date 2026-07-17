@@ -7,7 +7,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "supabase:login": "supabase login",
+    "supabase:link": "supabase link",
+    "supabase:db:push": "supabase db push",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop"
   },
   "keywords": [],
   "author": "",

@@ -2,120 +2,129 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type StoredUser = {
+import type { User } from "@supabase/supabase-js";
+
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+const isSupabaseConfigured =
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+type PublicUser = {
   id: string;
   name: string;
   email: string;
-  password: string;
   createdAt: string;
 };
-
-type PublicUser = Omit<StoredUser, "password">;
 
 type AuthContextValue = {
   currentUser: PublicUser | null;
   isReady: boolean;
-  signUp: (name: string, email: string, password: string) => { ok: true } | { ok: false; message: string };
-  logIn: (email: string, password: string) => { ok: true } | { ok: false; message: string };
-  logOut: () => void;
+  signUp: (name: string, email: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
+  logIn: (email: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
+  logOut: () => Promise<void>;
 };
-
-const USERS_STORAGE_KEY = "ow-couture-users";
-const SESSION_STORAGE_KEY = "ow-couture-active-user";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function isBrowser() {
-  return typeof window !== "undefined";
-}
+async function toPublicUser(user: User): Promise<PublicUser> {
+  const supabase = createSupabaseBrowserClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
 
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
+  const metadataName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null;
+  const profileName = typeof profile?.full_name === "string" ? profile.full_name : null;
+  const fallbackName = user.email ? user.email.split("@")[0] : "Member";
 
-function getStoredUsers() {
-  if (!isBrowser()) {
-    return [] as StoredUser[];
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(USERS_STORAGE_KEY);
-    if (!rawValue) {
-      return [];
-    }
-
-    const parsedValue = JSON.parse(rawValue);
-    if (!Array.isArray(parsedValue)) {
-      return [];
-    }
-
-    return parsedValue.filter((item): item is StoredUser => {
-      return (
-        item &&
-        typeof item.id === "string" &&
-        typeof item.name === "string" &&
-        typeof item.email === "string" &&
-        typeof item.password === "string" &&
-        typeof item.createdAt === "string"
-      );
-    });
-  } catch {
-    return [];
-  }
-}
-
-function saveStoredUsers(users: StoredUser[]) {
-  if (!isBrowser()) {
-    return;
-  }
-
-  window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-}
-
-function toPublicUser(user: StoredUser): PublicUser {
   return {
     id: user.id,
-    name: user.name,
-    email: user.email,
-    createdAt: user.createdAt,
+    name: profileName ?? metadataName ?? fallbackName,
+    email: user.email ?? "",
+    createdAt: user.created_at,
   };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<PublicUser | null>(null);
   const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    if (!isBrowser()) {
-      return;
+  const supabase = useMemo(() => {
+    if (!isSupabaseConfigured) {
+      return null;
     }
 
-    const users = getStoredUsers();
-    const activeUserId = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    return createSupabaseBrowserClient();
+  }, []);
 
-    if (!activeUserId) {
+  useEffect(() => {
+    if (!supabase) {
+      setCurrentUser(null);
       setIsReady(true);
       return;
     }
 
-    const foundUser = users.find((user) => user.id === activeUserId);
-    if (foundUser) {
-      setCurrentUser(toPublicUser(foundUser));
-    } else {
-      window.localStorage.removeItem(SESSION_STORAGE_KEY);
-    }
+    let isMounted = true;
 
-    setIsReady(true);
-  }, []);
+    const hydrate = async () => {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (!user) {
+        setCurrentUser(null);
+        setIsReady(true);
+        return;
+      }
+
+      const publicUser = await toPublicUser(user);
+      if (!isMounted) {
+        return;
+      }
+
+      setCurrentUser(publicUser);
+      setIsReady(true);
+    };
+
+    void hydrate();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      if (!user) {
+        setCurrentUser(null);
+        return;
+      }
+
+      void toPublicUser(user).then((mappedUser) => {
+        if (isMounted) {
+          setCurrentUser(mappedUser);
+        }
+      });
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const value = useMemo<AuthContextValue>(() => {
     return {
       currentUser,
       isReady,
-      signUp: (name, email, password) => {
+      signUp: async (name, email, password) => {
         const cleanedName = name.trim();
-        const cleanedEmail = normalizeEmail(email);
+        const cleanedEmail = email.trim().toLowerCase();
         const cleanedPassword = password.trim();
+
+        if (!supabase) {
+          return { ok: false, message: "Supabase is not configured yet. Add env values to .env.local." };
+        }
 
         if (!cleanedName) {
           return { ok: false, message: "Name is required." };
@@ -129,55 +138,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { ok: false, message: "Password must be at least 6 characters." };
         }
 
-        const users = getStoredUsers();
-        if (users.some((user) => normalizeEmail(user.email) === cleanedEmail)) {
-          return { ok: false, message: "An account with that email already exists." };
-        }
-
-        const createdUser: StoredUser = {
-          id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}`,
-          name: cleanedName,
+        const { data, error } = await supabase.auth.signUp({
           email: cleanedEmail,
           password: cleanedPassword,
-          createdAt: new Date().toISOString(),
-        };
+          options: {
+            data: {
+              full_name: cleanedName,
+            },
+          },
+        });
 
-        saveStoredUsers([createdUser, ...users]);
-
-        if (isBrowser()) {
-          window.localStorage.setItem(SESSION_STORAGE_KEY, createdUser.id);
+        if (error) {
+          return { ok: false, message: error.message };
         }
 
-        setCurrentUser(toPublicUser(createdUser));
+        if (data.user) {
+          await supabase.from("profiles").upsert({
+            id: data.user.id,
+            full_name: cleanedName,
+          });
+        }
+
         return { ok: true };
       },
-      logIn: (email, password) => {
-        const cleanedEmail = normalizeEmail(email);
+      logIn: async (email, password) => {
+        const cleanedEmail = email.trim().toLowerCase();
         const cleanedPassword = password.trim();
 
-        const users = getStoredUsers();
-        const foundUser = users.find((user) => normalizeEmail(user.email) === cleanedEmail);
-
-        if (!foundUser || foundUser.password !== cleanedPassword) {
-          return { ok: false, message: "Invalid email or password." };
+        if (!supabase) {
+          return { ok: false, message: "Supabase is not configured yet. Add env values to .env.local." };
         }
 
-        if (isBrowser()) {
-          window.localStorage.setItem(SESSION_STORAGE_KEY, foundUser.id);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: cleanedEmail,
+          password: cleanedPassword,
+        });
+
+        if (error) {
+          return { ok: false, message: error.message };
         }
 
-        setCurrentUser(toPublicUser(foundUser));
         return { ok: true };
       },
-      logOut: () => {
-        if (isBrowser()) {
-          window.localStorage.removeItem(SESSION_STORAGE_KEY);
+      logOut: async () => {
+        if (!supabase) {
+          setCurrentUser(null);
+          return;
         }
 
+        await supabase.auth.signOut();
         setCurrentUser(null);
       },
     };
-  }, [currentUser, isReady]);
+  }, [currentUser, isReady, supabase]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

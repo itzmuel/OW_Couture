@@ -4,10 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  getConsultationSubmissions,
   type ConsultationStatus,
   type ConsultationSubmission,
-  updateConsultationSubmissionStatus,
 } from "@/data/consultation-submissions";
 import { products } from "@/data/products";
 
@@ -51,17 +49,73 @@ function StatusButton({
 
 export default function AdminPage() {
   const [submissions, setSubmissions] = useState<ConsultationSubmission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    setSubmissions(getConsultationSubmissions());
+  const fetchSubmissions = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
 
-    const syncOnStorage = () => {
-      setSubmissions(getConsultationSubmissions());
+    const response = await fetch("/api/admin/consultations", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const payload = (await response.json()) as {
+      message?: string;
+      submissions?: Array<{
+        id: string;
+        user_id: string | null;
+        name: string;
+        email: string;
+        phone: string;
+        requested_date: string | null;
+        requested_time: string | null;
+        consultation_type: string;
+        request: string;
+        status: ConsultationStatus;
+        created_at: string;
+      }>;
     };
 
-    window.addEventListener("storage", syncOnStorage);
+    if (!response.ok) {
+      setErrorMessage(payload.message ?? "Unable to load admin submissions.");
+      setSubmissions([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const mappedSubmissions = (payload.submissions ?? []).map((row) => {
+      return {
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        email: row.email,
+        phone: row.phone,
+        date: row.requested_date ?? "",
+        time: row.requested_time ?? "",
+        consultationType: row.consultation_type,
+        request: row.request,
+        status: row.status,
+        submittedAt: row.created_at,
+      } satisfies ConsultationSubmission;
+    });
+
+    setSubmissions(mappedSubmissions);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    void fetchSubmissions();
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void fetchSubmissions();
+    }, 12000);
+
     return () => {
-      window.removeEventListener("storage", syncOnStorage);
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -81,9 +135,22 @@ export default function AdminPage() {
     };
   }, [submissions]);
 
-  const setStatus = (id: string, status: ConsultationStatus) => {
-    const updatedItems = updateConsultationSubmissionStatus(id, status);
-    setSubmissions(updatedItems);
+  const setStatus = async (id: string, status: ConsultationStatus) => {
+    const response = await fetch("/api/admin/consultations", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, status }),
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json()) as { message?: string };
+      setErrorMessage(payload.message ?? "Unable to update submission status.");
+      return;
+    }
+
+    await fetchSubmissions();
   };
 
   return (
@@ -125,10 +192,18 @@ export default function AdminPage() {
           <article className="rounded-[28px] border border-[var(--line)] bg-white p-6 sm:p-7" data-scroll-reveal data-scroll-direction="left">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-3xl tracking-[-0.04em] text-neutral-950">Consultation submissions</h2>
-              <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Local admin view</p>
+              <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Supabase admin view</p>
             </div>
 
-            {submissions.length === 0 ? (
+            {errorMessage ? (
+              <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">{errorMessage}</p>
+            ) : null}
+
+            {isLoading ? (
+              <p className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--soft)] px-4 py-4 text-sm text-[var(--muted)]">
+                Loading consultation submissions...
+              </p>
+            ) : submissions.length === 0 ? (
               <p className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--soft)] px-4 py-4 text-sm text-[var(--muted)]">
                 No submissions captured yet. New consultation requests will appear here after users submit the booking form.
               </p>

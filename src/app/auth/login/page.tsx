@@ -22,10 +22,10 @@ export default function LoginPage() {
 
         <form
           className="mt-8 grid gap-4 rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-6"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const response = logIn(
+            const response = await logIn(
               String(formData.get("email") ?? ""),
               String(formData.get("password") ?? ""),
             );

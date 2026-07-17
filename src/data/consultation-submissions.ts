@@ -1,3 +1,5 @@
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
 export type ConsultationStatus = "new" | "in-progress" | "confirmed";
 
 export type ConsultationSubmission = {
@@ -11,6 +13,7 @@ export type ConsultationSubmission = {
   request: string;
   submittedAt: string;
   status: ConsultationStatus;
+  userId: string | null;
 };
 
 export type ConsultationSubmissionInput = Omit<
@@ -18,102 +21,63 @@ export type ConsultationSubmissionInput = Omit<
   "id" | "submittedAt" | "status"
 >;
 
-const STORAGE_KEY = "ow-couture-consultation-submissions";
+type ConsultationSubmissionRow = {
+  id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  requested_date: string | null;
+  requested_time: string | null;
+  consultation_type: string;
+  request: string;
+  status: ConsultationStatus;
+  created_at: string;
+};
 
-function isBrowser() {
-  return typeof window !== "undefined";
-}
-
-function sortByMostRecent(items: ConsultationSubmission[]) {
-  return [...items].sort((a, b) => {
-    return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
-  });
-}
-
-function parseStoredSubmissions(rawValue: string | null) {
-  if (!rawValue) {
-    return [];
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue);
-    if (!Array.isArray(parsedValue)) {
-      return [];
-    }
-
-    return parsedValue.filter((item): item is ConsultationSubmission => {
-      return (
-        item &&
-        typeof item.id === "string" &&
-        typeof item.name === "string" &&
-        typeof item.email === "string" &&
-        typeof item.phone === "string" &&
-        typeof item.date === "string" &&
-        typeof item.time === "string" &&
-        typeof item.consultationType === "string" &&
-        typeof item.request === "string" &&
-        typeof item.submittedAt === "string" &&
-        (item.status === "new" || item.status === "in-progress" || item.status === "confirmed")
-      );
-    });
-  } catch {
-    return [];
-  }
-}
-
-function saveConsultationSubmissions(items: ConsultationSubmission[]) {
-  if (!isBrowser()) {
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sortByMostRecent(items)));
-}
-
-export function getConsultationSubmissions() {
-  if (!isBrowser()) {
-    return [];
-  }
-
-  const storedItems = parseStoredSubmissions(window.localStorage.getItem(STORAGE_KEY));
-  return sortByMostRecent(storedItems);
-}
-
-export function addConsultationSubmission(input: ConsultationSubmissionInput) {
-  const createdSubmission: ConsultationSubmission = {
-    ...input,
-    id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}`,
-    submittedAt: new Date().toISOString(),
-    status: "new",
+function mapRowToSubmission(row: ConsultationSubmissionRow): ConsultationSubmission {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    date: row.requested_date ?? "",
+    time: row.requested_time ?? "",
+    consultationType: row.consultation_type,
+    request: row.request,
+    status: row.status,
+    submittedAt: row.created_at,
   };
-
-  if (!isBrowser()) {
-    return createdSubmission;
-  }
-
-  const existingSubmissions = getConsultationSubmissions();
-  const updatedSubmissions = [createdSubmission, ...existingSubmissions].slice(0, 200);
-  saveConsultationSubmissions(updatedSubmissions);
-
-  return createdSubmission;
 }
 
-export function updateConsultationSubmissionStatus(id: string, status: ConsultationStatus) {
-  if (!isBrowser()) {
-    return [];
+export async function addConsultationSubmission(input: ConsultationSubmissionInput) {
+  const supabase = createSupabaseBrowserClient();
+
+  const { data, error } = await supabase
+    .from("consultation_submissions")
+    .insert({
+      user_id: input.userId,
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      requested_date: input.date || null,
+      requested_time: input.time || null,
+      consultation_type: input.consultationType,
+      request: input.request,
+    })
+    .select("id,user_id,name,email,phone,requested_date,requested_time,consultation_type,request,status,created_at")
+    .single();
+
+  if (error || !data) {
+    return {
+      ok: false as const,
+      message: error?.message ?? "Unable to submit consultation request.",
+    };
   }
 
-  const existingSubmissions = getConsultationSubmissions();
-  const updatedSubmissions = existingSubmissions.map((submission) => {
-    if (submission.id !== id) {
-      return submission;
-    }
-
-    return {
-      ...submission,
-      status,
-    };
-  });
-
-  saveConsultationSubmissions(updatedSubmissions);
-  return updatedSubmissions;
+  return {
+    ok: true as const,
+    submission: mapRowToSubmission(data),
+  };
 }
