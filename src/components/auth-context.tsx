@@ -19,7 +19,10 @@ type PublicUser = {
 type AuthContextValue = {
   currentUser: PublicUser | null;
   isReady: boolean;
-  signUp: (name: string, email: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
+  signUp: (name: string, email: string, password: string) => Promise<
+    | { ok: true; signedIn: boolean; message?: string }
+    | { ok: false; message: string }
+  >;
   logIn: (email: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   logOut: () => Promise<void>;
 };
@@ -159,7 +162,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
 
-        return { ok: true };
+        if (!data.session) {
+          return {
+            ok: true,
+            signedIn: false,
+            message: "Account created. Confirm your email, then log in.",
+          };
+        }
+
+        return { ok: true, signedIn: true };
       },
       logIn: async (email, password) => {
         const cleanedEmail = email.trim().toLowerCase();

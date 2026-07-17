@@ -35,8 +35,14 @@ export default function LoginPage() {
               return;
             }
 
+            const adminAccessResponse = await fetch("/api/admin/access", {
+              method: "GET",
+              cache: "no-store",
+            });
+            const adminAccessPayload = (await adminAccessResponse.json()) as { isAdmin?: boolean };
+
             setErrorMessage("");
-            router.push("/account");
+            router.push(adminAccessPayload.isAdmin ? "/admin" : "/account");
           }}
         >
           <label className="grid gap-2 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
