@@ -13,6 +13,17 @@ type EditableItem = {
   unitPrice: number;
 };
 
+type OrderDraft = {
+  customerName: string;
+  customerEmail: string;
+  orderDate: string;
+  notes: string;
+  shippingAddress: string;
+  measurementsText: string;
+  inspirationText: string;
+  currency: string;
+};
+
 function formatCurrency(value: number, currency: string) {
   return new Intl.NumberFormat("en-CA", {
     style: "currency",
@@ -55,6 +66,18 @@ export function AdminOrdersPageClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [itemDrafts, setItemDrafts] = useState<EditableItem[]>([]);
   const [isSavingItems, setIsSavingItems] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [orderDraft, setOrderDraft] = useState<OrderDraft>({
+    customerName: "",
+    customerEmail: "",
+    orderDate: "",
+    notes: "",
+    shippingAddress: "",
+    measurementsText: "{}",
+    inspirationText: "",
+    currency: "CAD",
+  });
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -99,6 +122,16 @@ export function AdminOrdersPageClient() {
   useEffect(() => {
     if (!selectedOrder) {
       setItemDrafts([]);
+      setOrderDraft({
+        customerName: "",
+        customerEmail: "",
+        orderDate: "",
+        notes: "",
+        shippingAddress: "",
+        measurementsText: "{}",
+        inspirationText: "",
+        currency: "CAD",
+      });
       return;
     }
 
@@ -113,6 +146,17 @@ export function AdminOrdersPageClient() {
         };
       }),
     );
+
+    setOrderDraft({
+      customerName: selectedOrder.customerName,
+      customerEmail: selectedOrder.customerEmail,
+      orderDate: selectedOrder.orderDate,
+      notes: selectedOrder.notes ?? "",
+      shippingAddress: selectedOrder.shippingAddress ?? "",
+      measurementsText: JSON.stringify(selectedOrder.measurements, null, 2),
+      inspirationText: selectedOrder.inspirationUrls.join("\n"),
+      currency: selectedOrder.currency,
+    });
   }, [selectedOrder]);
 
   const applyAction = async (action: AdminOrderAction) => {
@@ -215,14 +259,111 @@ export function AdminOrdersPageClient() {
     await loadOrders();
   };
 
+  const saveOrderDetails = async () => {
+    if (!selectedOrder) {
+      return;
+    }
+
+    let parsedMeasurements: Record<string, string | number | null> = {};
+
+    try {
+      parsedMeasurements = orderDraft.measurementsText.trim()
+        ? (JSON.parse(orderDraft.measurementsText) as Record<string, string | number | null>)
+        : {};
+    } catch {
+      setErrorMessage("Measurements must be valid JSON.");
+      return;
+    }
+
+    setIsSavingOrder(true);
+    const response = await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: selectedOrder.id,
+        customerName: orderDraft.customerName,
+        customerEmail: orderDraft.customerEmail,
+        orderDate: orderDraft.orderDate,
+        notes: orderDraft.notes,
+        shippingAddress: orderDraft.shippingAddress,
+        measurements: parsedMeasurements,
+        inspirationUrls: orderDraft.inspirationText
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        currency: orderDraft.currency,
+      }),
+    });
+
+    const payload = (await response.json()) as { message?: string };
+    if (!response.ok) {
+      setErrorMessage(payload.message ?? "Unable to save order details.");
+      setIsSavingOrder(false);
+      return;
+    }
+
+    setErrorMessage("");
+    setIsSavingOrder(false);
+    await loadOrders();
+  };
+
+  const createOrder = async () => {
+    setIsCreatingOrder(true);
+    const today = new Date().toISOString().slice(0, 10);
+    const response = await fetch("/api/admin/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customerName: "New Client",
+        customerEmail: `client-${Date.now()}@example.com`,
+        orderDate: today,
+        notes: "",
+        shippingAddress: "",
+        measurements: {},
+        inspirationUrls: [],
+        currency: "CAD",
+      }),
+    });
+
+    const payload = (await response.json()) as { id?: string; message?: string };
+    if (!response.ok || !payload.id) {
+      setErrorMessage(payload.message ?? "Unable to create order.");
+      setIsCreatingOrder(false);
+      return;
+    }
+
+    setErrorMessage("");
+    await loadOrders();
+    setSelectedOrderId(payload.id);
+    setIsCreatingOrder(false);
+  };
+
   return (
     <div className="grid gap-6">
       <header className="rounded-[30px] border border-[var(--line)] bg-white p-6 sm:p-8">
-        <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Orders</p>
-        <h2 className="mt-2 text-[clamp(30px,4vw,48px)] leading-[1] tracking-[-0.05em] text-neutral-950">Order management</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)] sm:text-base">
-          Track each couture order through approval, production, fitting, shipping, and delivery.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Orders</p>
+            <h2 className="mt-2 text-[clamp(30px,4vw,48px)] leading-[1] tracking-[-0.05em] text-neutral-950">Order management</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)] sm:text-base">
+              Track each couture order through approval, production, fitting, shipping, and delivery.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void createOrder();
+            }}
+            disabled={isCreatingOrder}
+            className="rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300"
+          >
+            {isCreatingOrder ? "Creating..." : "Create order"}
+          </button>
+        </div>
       </header>
 
       {errorMessage ? (
@@ -288,6 +429,92 @@ export function AdminOrdersPageClient() {
                 <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Customer</p>
                 <p className="mt-1 text-xl tracking-[-0.03em] text-neutral-950">{selectedOrder.customerName}</p>
                 <p className="text-sm text-neutral-700">{selectedOrder.customerEmail}</p>
+              </div>
+
+              <div className="grid gap-3 rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">
+                <p className="font-medium text-neutral-900">Edit order details</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Customer name
+                    <input
+                      value={orderDraft.customerName}
+                      onChange={(event) => setOrderDraft((current) => ({ ...current, customerName: event.target.value }))}
+                      className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Customer email
+                    <input
+                      type="email"
+                      value={orderDraft.customerEmail}
+                      onChange={(event) => setOrderDraft((current) => ({ ...current, customerEmail: event.target.value }))}
+                      className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Order date
+                    <input
+                      type="date"
+                      value={orderDraft.orderDate}
+                      onChange={(event) => setOrderDraft((current) => ({ ...current, orderDate: event.target.value }))}
+                      className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Currency
+                    <input
+                      value={orderDraft.currency}
+                      onChange={(event) => setOrderDraft((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                      className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                    />
+                  </label>
+                </div>
+                <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                  Shipping address
+                  <textarea
+                    rows={3}
+                    value={orderDraft.shippingAddress}
+                    onChange={(event) => setOrderDraft((current) => ({ ...current, shippingAddress: event.target.value }))}
+                    className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                  Notes
+                  <textarea
+                    rows={4}
+                    value={orderDraft.notes}
+                    onChange={(event) => setOrderDraft((current) => ({ ...current, notes: event.target.value }))}
+                    className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                  Measurements JSON
+                  <textarea
+                    rows={6}
+                    value={orderDraft.measurementsText}
+                    onChange={(event) => setOrderDraft((current) => ({ ...current, measurementsText: event.target.value }))}
+                    className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 font-mono text-sm text-neutral-900"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                  Inspiration links
+                  <textarea
+                    rows={4}
+                    value={orderDraft.inspirationText}
+                    onChange={(event) => setOrderDraft((current) => ({ ...current, inspirationText: event.target.value }))}
+                    className="rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void saveOrderDetails();
+                  }}
+                  disabled={isSavingOrder}
+                  className="rounded-full border border-black bg-black px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300"
+                >
+                  {isSavingOrder ? "Saving..." : "Save order details"}
+                </button>
               </div>
 
               <div className="grid gap-2 rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">

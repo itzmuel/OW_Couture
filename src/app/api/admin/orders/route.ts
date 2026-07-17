@@ -50,6 +50,17 @@ type ItemRow = {
   unit_price: number;
 };
 
+type EditableOrderPayload = {
+  customerName?: string;
+  customerEmail?: string;
+  orderDate?: string;
+  notes?: string | null;
+  shippingAddress?: string | null;
+  measurements?: Record<string, string | number | null>;
+  inspirationUrls?: string[];
+  currency?: string;
+};
+
 function toAdminOrder(row: OrderRow, events: EventRow[], items: ItemRow[]): AdminOrder {
   return {
     id: row.id,
@@ -118,6 +129,72 @@ async function syncProductionEvents(orderId: string, productionStage: Production
   }
 
   return null;
+}
+
+function normalizeEditableOrderPayload(payload: EditableOrderPayload) {
+  const customerName = payload.customerName?.trim();
+  const customerEmail = payload.customerEmail?.trim().toLowerCase();
+  const orderDate = payload.orderDate?.trim();
+  const currency = payload.currency?.trim().toUpperCase() || "CAD";
+
+  if (!customerName) {
+    return { ok: false as const, message: "Customer name is required." };
+  }
+
+  if (!customerEmail) {
+    return { ok: false as const, message: "Customer email is required." };
+  }
+
+  if (!orderDate) {
+    return { ok: false as const, message: "Order date is required." };
+  }
+
+  return {
+    ok: true as const,
+    value: {
+      customer_name: customerName,
+      customer_email: customerEmail,
+      order_date: orderDate,
+      notes: payload.notes?.trim() || null,
+      shipping_address: payload.shippingAddress?.trim() || null,
+      measurements: payload.measurements ?? {},
+      inspiration_urls: payload.inspirationUrls ?? [],
+      currency,
+    },
+  };
+}
+
+export async function POST(request: Request) {
+  const adminCheck = await ensureAdminUser();
+  if (!adminCheck.ok) {
+    return NextResponse.json({ message: adminCheck.message }, { status: adminCheck.status });
+  }
+
+  const payload = (await request.json()) as EditableOrderPayload;
+  const normalized = normalizeEditableOrderPayload(payload);
+
+  if (!normalized.ok) {
+    return NextResponse.json({ message: normalized.message }, { status: 400 });
+  }
+
+  const adminClient = createSupabaseAdminClient();
+  const { data, error } = await adminClient
+    .from("orders")
+    .insert({
+      ...normalized.value,
+      status: "awaiting-review",
+      payment_status: "pending",
+      production_stage: "payment-received",
+      total_amount: 0,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ id: data.id }, { status: 201 });
 }
 
 export async function GET() {
@@ -198,6 +275,14 @@ export async function PATCH(request: Request) {
     status?: string;
     paymentStatus?: string;
     productionStage?: string;
+    customerName?: string;
+    customerEmail?: string;
+    orderDate?: string;
+    notes?: string | null;
+    shippingAddress?: string | null;
+    measurements?: Record<string, string | number | null>;
+    inspirationUrls?: string[];
+    currency?: string;
     items?: Array<{
       id?: string;
       productSlug?: string;
@@ -225,6 +310,34 @@ export async function PATCH(request: Request) {
 
   if (payload.productionStage && !isProductionStage(payload.productionStage)) {
     return NextResponse.json({ message: "Invalid production stage provided." }, { status: 400 });
+  }
+
+  const isEditingOrderDetails = Boolean(
+    payload.customerName !== undefined ||
+      payload.customerEmail !== undefined ||
+      payload.orderDate !== undefined ||
+      payload.notes !== undefined ||
+      payload.shippingAddress !== undefined ||
+      payload.measurements !== undefined ||
+      payload.inspirationUrls !== undefined ||
+      payload.currency !== undefined,
+  );
+
+  const normalizedOrderDetails = isEditingOrderDetails
+    ? normalizeEditableOrderPayload({
+        customerName: payload.customerName,
+        customerEmail: payload.customerEmail,
+        orderDate: payload.orderDate,
+        notes: payload.notes,
+        shippingAddress: payload.shippingAddress,
+        measurements: payload.measurements,
+        inspirationUrls: payload.inspirationUrls,
+        currency: payload.currency,
+      })
+    : null;
+
+  if (normalizedOrderDetails && !normalizedOrderDetails.ok) {
+    return NextResponse.json({ message: normalizedOrderDetails.message }, { status: 400 });
   }
 
   if (payload.items) {
@@ -317,6 +430,10 @@ export async function PATCH(request: Request) {
     updatePayload.total_amount = payload.items.reduce((sum, item) => {
       return sum + (item.quantity ?? 0) * (item.unitPrice ?? 0);
     }, 0);
+  }
+
+  if (normalizedOrderDetails?.ok) {
+    Object.assign(updatePayload, normalizedOrderDetails.value);
   }
 
   const { error: updateError } = await adminClient
