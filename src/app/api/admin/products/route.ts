@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { AdminProduct } from "@/lib/admin/products";
+import { hasAdminPermission } from "@/lib/admin/team";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 
@@ -73,6 +74,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Product slug is required." }, { status: 400 });
   }
 
+  if (payload.archived !== undefined && !hasAdminPermission(adminCheck.permissions, "products:archive")) {
+    return NextResponse.json({ message: "You do not have permission to archive products." }, { status: 403 });
+  }
+
   const adminClient = createSupabaseAdminClient();
   const { error } = await adminClient
     .from("catalog_products")
@@ -112,6 +117,10 @@ export async function POST(request: Request) {
   const payload = (await request.json()) as AdminProduct;
   if (!payload.slug || !payload.name || !payload.code) {
     return NextResponse.json({ message: "slug, name, and code are required." }, { status: 400 });
+  }
+
+  if (payload.archived && !hasAdminPermission(adminCheck.permissions, "products:archive")) {
+    return NextResponse.json({ message: "You do not have permission to archive products." }, { status: 403 });
   }
 
   const adminClient = createSupabaseAdminClient();

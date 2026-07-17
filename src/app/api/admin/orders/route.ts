@@ -14,6 +14,7 @@ import {
   type PaymentStatus,
   type ProductionStage,
 } from "@/lib/admin/orders";
+import { hasAdminPermission } from "@/lib/admin/team";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type OrderRow = {
@@ -264,7 +265,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const adminCheck = await ensureAdminUser("orders:manage");
+  const adminCheck = await ensureAdminUser();
   if (!adminCheck.ok) {
     return NextResponse.json({ message: adminCheck.message }, { status: adminCheck.status });
   }
@@ -296,6 +297,33 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Order id is required." }, { status: 400 });
   }
 
+  const isEditingOrderDetails = Boolean(
+    payload.customerName !== undefined ||
+      payload.customerEmail !== undefined ||
+      payload.orderDate !== undefined ||
+      payload.notes !== undefined ||
+      payload.shippingAddress !== undefined ||
+      payload.measurements !== undefined ||
+      payload.inspirationUrls !== undefined ||
+      payload.currency !== undefined,
+  );
+
+  const needsOrdersManage = Boolean(payload.action || payload.status || payload.items || isEditingOrderDetails);
+  const needsPaymentsManage = payload.paymentStatus !== undefined;
+  const needsProductionManage = payload.productionStage !== undefined;
+
+  if (needsOrdersManage && !hasAdminPermission(adminCheck.permissions, "orders:manage")) {
+    return NextResponse.json({ message: "You do not have permission to manage orders." }, { status: 403 });
+  }
+
+  if (needsPaymentsManage && !hasAdminPermission(adminCheck.permissions, "payments:manage")) {
+    return NextResponse.json({ message: "You do not have permission to manage payments." }, { status: 403 });
+  }
+
+  if (needsProductionManage && !hasAdminPermission(adminCheck.permissions, "production:manage")) {
+    return NextResponse.json({ message: "You do not have permission to manage production stages." }, { status: 403 });
+  }
+
   if (payload.action && !isAdminOrderAction(payload.action)) {
     return NextResponse.json({ message: "Invalid action provided." }, { status: 400 });
   }
@@ -311,17 +339,6 @@ export async function PATCH(request: Request) {
   if (payload.productionStage && !isProductionStage(payload.productionStage)) {
     return NextResponse.json({ message: "Invalid production stage provided." }, { status: 400 });
   }
-
-  const isEditingOrderDetails = Boolean(
-    payload.customerName !== undefined ||
-      payload.customerEmail !== undefined ||
-      payload.orderDate !== undefined ||
-      payload.notes !== undefined ||
-      payload.shippingAddress !== undefined ||
-      payload.measurements !== undefined ||
-      payload.inspirationUrls !== undefined ||
-      payload.currency !== undefined,
-  );
 
   const normalizedOrderDetails = isEditingOrderDetails
     ? normalizeEditableOrderPayload({

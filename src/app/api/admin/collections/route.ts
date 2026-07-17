@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { AdminCollection } from "@/lib/admin/collections";
+import { hasAdminPermission } from "@/lib/admin/team";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureAdminUser } from "@/lib/supabase/admin-auth";
 
@@ -57,6 +58,10 @@ export async function PATCH(request: Request) {
   const payload = (await request.json()) as AdminCollection;
   if (!payload.slug) {
     return NextResponse.json({ message: "Collection slug is required." }, { status: 400 });
+  }
+
+  if (payload.archived && !hasAdminPermission(adminCheck.permissions, "collections:archive")) {
+    return NextResponse.json({ message: "You do not have permission to archive collections." }, { status: 403 });
   }
 
   const adminClient = createSupabaseAdminClient();
