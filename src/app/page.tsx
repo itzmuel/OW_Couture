@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { defaultHomepageContent, type HomepageContent } from "@/lib/admin/website";
+
 const collectionCards = [
   {
     title: "Wedding",
@@ -42,6 +44,7 @@ const instagramImages = [
 
 export default function Home() {
   const [heroOffset, setHeroOffset] = useState(0);
+  const [homepageContent, setHomepageContent] = useState<HomepageContent>(defaultHomepageContent);
 
   useEffect(() => {
     let ticking = false;
@@ -68,6 +71,30 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadHomepageContent = async () => {
+      const response = await fetch("/api/site-content", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const payload = (await response.json()) as { homepage?: HomepageContent };
+      if (!isMounted || !payload.homepage) {
+        return;
+      }
+
+      setHomepageContent(payload.homepage);
+    };
+
+    void loadHomepageContent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <main>
       <header
@@ -82,7 +109,8 @@ export default function Home() {
         <div className="mx-auto flex min-h-[82vh] w-full max-w-[1180px] items-center justify-center px-4 text-center sm:px-6 lg:px-8">
           <div className="relative z-10 animate-[fadeIn_0.7s_ease_both]" style={{ transform: `translate3d(0, ${Math.min(heroOffset * 0.12, 36)}px, 0)` }}>
             <h1 className="text-[clamp(44px,8vw,96px)] leading-[0.95] tracking-[-0.07em] text-white">OW Couture.</h1>
-            <p className="mt-4 text-lg text-white/85 sm:text-xl">Made to order. Made for you.</p>
+            <h1 className="text-[clamp(44px,8vw,96px)] leading-[0.95] tracking-[-0.07em] text-white">{homepageContent.heroTitle}</h1>
+            <p className="mt-4 text-lg text-white/85 sm:text-xl">{homepageContent.heroSubtitle}</p>
             <Link href="#collections" className="mt-6 inline-flex rounded-full bg-white px-6 py-3.5 text-sm font-medium text-black transition hover:-translate-y-0.5">
               Explore Collections
             </Link>
@@ -148,9 +176,9 @@ export default function Home() {
         <div className="mx-auto grid w-full max-w-[1180px] gap-9 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
           <div data-scroll-reveal data-scroll-direction="left" className="rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-7">
             <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Testimonials</p>
-            <h2 className="mt-3 text-[40px] leading-[1] tracking-[-0.05em] text-neutral-950">&ldquo;Obsessed with your experience.&rdquo;</h2>
+            <h2 className="mt-3 text-[40px] leading-[1] tracking-[-0.05em] text-neutral-950">&ldquo;{homepageContent.testimonialTitle}&rdquo;</h2>
             <p className="mt-4 max-w-xl text-base leading-8 text-[var(--muted)]">
-              Timeless pieces. Your favourite outfit waiting to happen. Bringing dreams to reality.
+              {homepageContent.testimonialBody}
             </p>
           </div>
           <div data-scroll-reveal data-scroll-direction="right" className="rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-7">
@@ -169,9 +197,9 @@ export default function Home() {
       <section id="about" className="border-b border-[var(--line)] py-20">
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">About OW Couture</p>
-          <h2 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">Not fast fashion. Lasting fashion.</h2>
+          <h2 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">{homepageContent.aboutTitle}</h2>
           <p className="mt-4 max-w-4xl text-base leading-8 text-[var(--muted)] sm:text-lg">
-            OW Couture is a made-to-order fashion house creating refined bridal, ready-to-wear, bridesmaids, and evening pieces. Our process is personal, intentional, and tailored around the woman wearing the garment.
+            {homepageContent.aboutBody}
           </p>
         </div>
       </section>
@@ -180,13 +208,14 @@ export default function Home() {
         <div className="mx-auto grid w-full max-w-[1180px] gap-9 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
           <div data-scroll-reveal data-scroll-direction="left">
             <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Digital Touchpoints</p>
-            <h2 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">Contact</h2>
+            <h2 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">{homepageContent.contactTitle}</h2>
             <p className="mt-4 text-base leading-8 text-neutral-800">
-              Email: hello@owcouture.com
-              <br />
-              Fallback: info@owcouture.com
-              <br />
-              Instagram: @OWCouture
+              {homepageContent.contactBody.split("\n").map((line, index) => (
+                <span key={`${line}-${index}`}>
+                  {line}
+                  {index < homepageContent.contactBody.split("\n").length - 1 ? <br /> : null}
+                </span>
+              ))}
             </p>
           </div>
           <div data-scroll-reveal data-scroll-direction="right" className="rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-7">
