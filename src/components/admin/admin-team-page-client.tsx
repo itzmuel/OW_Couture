@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAdminAccess } from "@/components/admin/use-admin-access";
-import type { AdminTeamMember } from "@/lib/admin/team";
+import {
+  allAdminPermissions,
+  defaultRolePermissions,
+  permissionLabels,
+  type AdminPermission,
+  type AdminTeamMember,
+} from "@/lib/admin/team";
 
 const emptyMember: AdminTeamMember = {
   email: "",
   fullName: "",
   role: "Manager",
-  permissions: ["orders:view", "customers:view"],
+  permissions: defaultRolePermissions.Manager,
   active: true,
 };
 
@@ -20,6 +26,49 @@ export function AdminTeamPageClient() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  const groupedPermissions = useMemo(() => {
+    return [
+      {
+        title: "Operations",
+        permissions: [
+          "dashboard:view",
+          "orders:view",
+          "orders:manage",
+          "production:view",
+          "production:manage",
+          "consultations:view",
+          "consultations:manage",
+          "payments:view",
+          "payments:manage",
+        ] satisfies AdminPermission[],
+      },
+      {
+        title: "Catalog And Site",
+        permissions: [
+          "products:view",
+          "products:manage",
+          "products:archive",
+          "collections:view",
+          "collections:manage",
+          "collections:archive",
+          "website:view",
+          "website:manage",
+          "analytics:view",
+        ] satisfies AdminPermission[],
+      },
+      {
+        title: "CRM And Access",
+        permissions: [
+          "customers:view",
+          "measurements:view",
+          "team:view",
+          "team:manage",
+          "settings:view",
+        ] satisfies AdminPermission[],
+      },
+    ];
+  }, []);
 
   const loadMembers = async () => {
     setIsLoading(true);
@@ -65,6 +114,31 @@ export function AdminTeamPageClient() {
     await loadMembers();
   };
 
+  const applyRolePreset = (role: AdminTeamMember["role"]) => {
+    setDraft((current) => ({
+      ...current,
+      role,
+      permissions: [...defaultRolePermissions[role]],
+    }));
+  };
+
+  const togglePermission = (permission: AdminPermission) => {
+    setDraft((current) => {
+      const nextPermissions = current.permissions.includes(permission)
+        ? current.permissions.filter((item) => item !== permission)
+        : [...current.permissions, permission];
+
+      const normalizedPermissions = nextPermissions.includes("admin:*")
+        ? ["admin:*"]
+        : nextPermissions.filter((item) => item !== "admin:*");
+
+      return {
+        ...current,
+        permissions: normalizedPermissions,
+      };
+    });
+  };
+
   return (
     <div className="grid gap-6">
       <header className="rounded-[30px] border border-[var(--line)] bg-white p-6 sm:p-8">
@@ -99,7 +173,7 @@ export function AdminTeamPageClient() {
                       <p className="text-xs text-neutral-600">{member.email}</p>
                     </td>
                     <td className="px-2 py-3 text-neutral-700">{member.role}</td>
-                    <td className="px-2 py-3 text-neutral-700">{member.permissions.join(", ")}</td>
+                    <td className="px-2 py-3 text-neutral-700">{member.permissions.map((permission) => permissionLabels[permission as AdminPermission] ?? permission).join(", ")}</td>
                     <td className="px-2 py-3 text-neutral-700">{member.active ? "Active" : "Inactive"}</td>
                   </tr>
                 ))}
@@ -112,8 +186,44 @@ export function AdminTeamPageClient() {
           <div className="grid gap-3">
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Full Name<input value={draft.fullName} onChange={(event) => setDraft((current) => ({ ...current, fullName: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Email<input type="email" value={draft.email} onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Role<select value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value as AdminTeamMember["role"] }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900"><option>Admin</option><option>Manager</option><option>Tailor</option><option>Customer Service</option></select></label>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Permissions (one per line)<textarea rows={6} value={draft.permissions.join("\n")} onChange={(event) => setDraft((current) => ({ ...current, permissions: event.target.value.split("\n").map((item) => item.trim()).filter(Boolean) }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Role<select value={draft.role} onChange={(event) => applyRolePreset(event.target.value as AdminTeamMember["role"])} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900"><option>Admin</option><option>Manager</option><option>Tailor</option><option>Customer Service</option></select></label>
+            <div className="grid gap-3 rounded-2xl border border-[var(--line)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Permission Toggles</p>
+                <button type="button" onClick={() => applyRolePreset(draft.role)} className="rounded-full border border-black px-3 py-1 text-xs uppercase tracking-[0.08em] text-neutral-900 transition hover:bg-black hover:text-white">
+                  Reset To {draft.role} Preset
+                </button>
+              </div>
+              {groupedPermissions.map((group) => (
+                <div key={group.title} className="grid gap-2">
+                  <p className="text-sm font-medium text-neutral-900">{group.title}</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {group.permissions.map((permission) => {
+                      const checked = draft.permissions.includes(permission) || draft.permissions.includes("admin:*");
+                      const disabled = draft.permissions.includes("admin:*");
+
+                      return (
+                        <label key={permission} className="flex items-center gap-2 rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-800">
+                          <input type="checkbox" checked={checked} disabled={disabled} onChange={() => togglePermission(permission)} />
+                          {permissionLabels[permission]}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {!draft.permissions.includes("admin:*") ? (
+                <label className="flex items-center gap-2 rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-800">
+                  <input type="checkbox" checked={draft.permissions.includes("admin:*")} onChange={() => togglePermission("admin:*")} />
+                  {permissionLabels["admin:*"]}
+                </label>
+              ) : (
+                <label className="flex items-center gap-2 rounded-xl border border-black bg-black px-3 py-2 text-sm text-white">
+                  <input type="checkbox" checked onChange={() => togglePermission("admin:*")} />
+                  {permissionLabels["admin:*"]}
+                </label>
+              )}
+            </div>
             <label className="flex items-center gap-2 text-sm text-neutral-800"><input type="checkbox" checked={draft.active} onChange={(event) => setDraft((current) => ({ ...current, active: event.target.checked }))} /> Active</label>
             <button type="button" onClick={() => { void saveMember(); }} disabled={isSaving || !hasPermission("team:manage")} className="w-fit rounded-full border border-black bg-black px-5 py-2.5 text-sm text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300">{isSaving ? "Saving..." : hasPermission("team:manage") ? "Save Team Member" : "View only"}</button>
           </div>
