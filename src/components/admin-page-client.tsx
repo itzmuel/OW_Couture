@@ -51,6 +51,8 @@ function StatusButton({
 export function AdminPageClient() {
   const { hasPermission } = useAdminAccess();
   const [submissions, setSubmissions] = useState<ConsultationSubmission[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ConsultationStatus>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -137,6 +139,20 @@ export function AdminPageClient() {
     };
   }, [submissions]);
 
+  const filteredSubmissions = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    return submissions.filter((submission) => {
+      const statusMatch = statusFilter === "all" || submission.status === statusFilter;
+      const searchMatch =
+        normalizedSearch.length === 0 ||
+        submission.name.toLowerCase().includes(normalizedSearch) ||
+        submission.email.toLowerCase().includes(normalizedSearch) ||
+        submission.consultationType.toLowerCase().includes(normalizedSearch);
+
+      return statusMatch && searchMatch;
+    });
+  }, [searchTerm, statusFilter, submissions]);
+
   const setStatus = async (id: string, status: ConsultationStatus) => {
     if (!hasPermission("consultations:manage")) {
       return;
@@ -215,7 +231,38 @@ export function AdminPageClient() {
               </p>
             ) : (
               <div className="mt-5 grid gap-4">
-                {submissions.map((submission) => (
+                <div className="grid gap-3 rounded-2xl border border-[var(--line)] p-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Search
+                    <input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search by name, email, or consultation type"
+                      className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Status
+                    <select
+                      value={statusFilter}
+                      onChange={(event) => setStatusFilter(event.target.value as "all" | ConsultationStatus)}
+                      className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900"
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="new">New</option>
+                      <option value="in-progress">In progress</option>
+                      <option value="confirmed">Confirmed</option>
+                    </select>
+                  </label>
+                </div>
+
+                {filteredSubmissions.length === 0 ? (
+                  <p className="rounded-2xl border border-[var(--line)] bg-[var(--soft)] px-4 py-4 text-sm text-[var(--muted)]">
+                    No consultation submissions match the selected filters.
+                  </p>
+                ) : null}
+
+                {filteredSubmissions.map((submission) => (
                   <div key={submission.id} className="rounded-2xl border border-[var(--line)] p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -225,8 +272,18 @@ export function AdminPageClient() {
                       <p className="text-xs text-[var(--muted)]">{formatSubmittedDate(submission.submittedAt)}</p>
                     </div>
                     <div className="mt-3 grid gap-1 text-sm text-neutral-700 sm:grid-cols-2">
-                      <p>Email: {submission.email}</p>
-                      <p>Phone: {submission.phone}</p>
+                      <p>
+                        Email:{" "}
+                        <a className="underline" href={`mailto:${submission.email}`}>
+                          {submission.email}
+                        </a>
+                      </p>
+                      <p>
+                        Phone:{" "}
+                        <a className="underline" href={`tel:${submission.phone}`}>
+                          {submission.phone}
+                        </a>
+                      </p>
                       <p>Date: {submission.date || "Not provided"}</p>
                       <p>Time: {submission.time || "Not provided"}</p>
                     </div>

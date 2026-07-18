@@ -7,7 +7,9 @@ export type AdminDashboardMetric = {
 export type AdminDashboardChart = {
   title: string;
   values: number[];
+  labels: string[];
   subtitle: string;
+  valueFormat: "currency" | "number";
 };
 
 export type AdminDashboardPayload = {

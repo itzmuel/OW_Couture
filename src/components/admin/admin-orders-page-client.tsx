@@ -388,10 +388,10 @@ export function AdminOrdersPageClient() {
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+            <table className="min-w-[980px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
                   <th className="px-2 py-3">Order #</th>
@@ -440,7 +440,7 @@ export function AdminOrdersPageClient() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
+        <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
           {selectedOrder ? (
             <div className="grid gap-4">
               <div>

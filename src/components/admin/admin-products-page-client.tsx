@@ -5,6 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useAdminAccess } from "@/components/admin/use-admin-access";
 import type { AdminProduct } from "@/lib/admin/products";
 
+type MediaAsset = {
+  path: string;
+  url: string;
+  name: string;
+  createdAt?: string | null;
+};
+
 const emptyProduct: AdminProduct = {
   slug: "",
   name: "",
@@ -30,10 +37,13 @@ export function AdminProductsPageClient() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [selectedSlug, setSelectedSlug] = useState("");
   const [draft, setDraft] = useState<AdminProduct>(emptyProduct);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   const loadProducts = async () => {
     setIsLoading(true);
@@ -55,8 +65,25 @@ export function AdminProductsPageClient() {
     setIsLoading(false);
   };
 
+  const loadMedia = async () => {
+    setIsLoadingMedia(true);
+    const response = await fetch("/api/admin/media", { method: "GET", cache: "no-store" });
+    const payload = (await response.json()) as { message?: string; assets?: MediaAsset[] };
+
+    if (!response.ok) {
+      setErrorMessage(payload.message ?? "Unable to load media library.");
+      setMediaAssets([]);
+      setIsLoadingMedia(false);
+      return;
+    }
+
+    setMediaAssets(payload.assets ?? []);
+    setIsLoadingMedia(false);
+  };
+
   useEffect(() => {
     void loadProducts();
+    void loadMedia();
   }, []);
 
   const selectedProduct = useMemo(() => {
@@ -107,6 +134,33 @@ export function AdminProductsPageClient() {
     setDraft(emptyProduct);
   };
 
+  const uploadMedia = async (file: File) => {
+    if (!hasPermission("products:manage")) {
+      return;
+    }
+
+    setIsUploadingMedia(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/admin/media", {
+      method: "POST",
+      body: formData,
+    });
+
+    const payload = (await response.json()) as { message?: string; asset?: MediaAsset };
+    if (!response.ok || !payload.asset) {
+      setErrorMessage(payload.message ?? "Unable to upload image.");
+      setIsUploadingMedia(false);
+      return;
+    }
+
+    setDraft((current) => ({ ...current, image: payload.asset?.url ?? current.image }));
+    setMediaAssets((current) => [payload.asset as MediaAsset, ...current]);
+    setErrorMessage("");
+    setIsUploadingMedia(false);
+  };
+
   return (
     <div className="grid gap-6">
       <header className="rounded-[30px] border border-[var(--line)] bg-white p-6 sm:p-8">
@@ -126,10 +180,10 @@ export function AdminProductsPageClient() {
 
       {errorMessage ? <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+            <table className="min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
                   <th className="px-2 py-3">Product</th>
@@ -145,10 +199,10 @@ export function AdminProductsPageClient() {
                   <tr key={product.slug} className={`cursor-pointer border-b border-[var(--line)] transition hover:bg-[var(--soft)] ${selectedSlug === product.slug ? "bg-[var(--soft)]" : ""}`} onClick={() => { setIsCreating(false); setSelectedSlug(product.slug); }}>
                     <td className="px-2 py-3">
                       <p className="font-medium text-neutral-900">{product.name}</p>
-                      <p className="text-xs text-neutral-600">{product.slug}</p>
+                      <p className="max-w-[240px] truncate text-xs text-neutral-600">{product.slug}</p>
                     </td>
                     <td className="px-2 py-3 text-neutral-700">{product.collection}</td>
-                    <td className="px-2 py-3 text-neutral-900">{product.priceFrom}</td>
+                    <td className="whitespace-nowrap px-2 py-3 text-neutral-900">{product.priceFrom}</td>
                     <td className="px-2 py-3 text-neutral-700">{product.featured ? "Featured" : "Standard"}{product.archived ? " · Archived" : ""}</td>
                   </tr>
                 ))}
@@ -157,7 +211,7 @@ export function AdminProductsPageClient() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
+        <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
           <div className="grid gap-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Slug<input value={draft.slug} onChange={(event) => setDraft((current) => ({ ...current, slug: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
@@ -176,6 +230,60 @@ export function AdminProductsPageClient() {
             </div>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Appointment Type<input value={draft.appointmentType} onChange={(event) => setDraft((current) => ({ ...current, appointmentType: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Image URL<input value={draft.image} onChange={(event) => setDraft((current) => ({ ...current, image: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <div className="rounded-2xl border border-[var(--line)] p-4">
+              <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Media library</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <label className="rounded-full border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.08em] text-white">
+                  {isUploadingMedia ? "Uploading..." : "Upload image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isUploadingMedia || !hasPermission("products:manage")}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) {
+                        return;
+                      }
+
+                      void uploadMedia(file);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                <p className="text-xs text-[var(--muted)]">Choose an existing image below or upload from your device.</p>
+              </div>
+
+              {draft.image ? (
+                <div className="mt-3 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--soft)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={draft.image} alt={draft.name || "Selected product image"} className="h-36 w-full object-cover" />
+                </div>
+              ) : null}
+
+              <div className="mt-3 grid max-h-60 gap-2 overflow-y-auto sm:grid-cols-2">
+                {isLoadingMedia ? (
+                  <p className="text-sm text-[var(--muted)]">Loading media library...</p>
+                ) : mediaAssets.length === 0 ? (
+                  <p className="text-sm text-[var(--muted)]">No images yet. Upload your first image to build your library.</p>
+                ) : (
+                  mediaAssets.map((asset) => (
+                    <button
+                      key={asset.path}
+                      type="button"
+                      onClick={() => setDraft((current) => ({ ...current, image: asset.url }))}
+                      className={`grid gap-2 rounded-xl border p-2 text-left transition hover:border-black ${
+                        draft.image === asset.url ? "border-black bg-[var(--soft)]" : "border-[var(--line)]"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={asset.url} alt={asset.name} className="h-20 w-full rounded-lg object-cover" />
+                      <p className="truncate text-xs text-neutral-700">{asset.name}</p>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Palette<input value={draft.palette} onChange={(event) => setDraft((current) => ({ ...current, palette: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Materials<textarea rows={3} value={draft.materials.join("\n")} onChange={(event) => updateArrayField("materials", event.target.value)} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Made For<textarea rows={3} value={draft.madeFor.join("\n")} onChange={(event) => updateArrayField("madeFor", event.target.value)} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>

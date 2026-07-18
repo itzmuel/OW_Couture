@@ -73,10 +73,10 @@ export function AdminCustomersPageClient() {
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+            <table className="min-w-[840px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
                   <th className="px-2 py-3">Customer</th>
@@ -120,7 +120,7 @@ export function AdminCustomersPageClient() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
+        <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
           {selectedCustomer ? (
             <div className="grid gap-4">
               <div>
@@ -135,7 +135,7 @@ export function AdminCustomersPageClient() {
                 <p className="mt-1 text-sm text-neutral-700">{selectedCustomer.email}</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">
                   <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Orders</p>
                   <p className="mt-2 text-2xl text-neutral-950">{selectedCustomer.orderCount}</p>
@@ -148,10 +148,12 @@ export function AdminCustomersPageClient() {
                   <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Lifetime Spend</p>
                   <p className="mt-2 text-2xl text-neutral-950">{formatCustomerMoney(selectedCustomer.lifetimeSpend)}</p>
                 </div>
-                <div className="rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">
-                  <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Last Visit</p>
-                  <p className="mt-2 text-base text-neutral-950">{formatDate(selectedCustomer.lastVisit)}</p>
-                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">
+                <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Last Visit</p>
+                <p className="mt-2 text-xl tracking-[-0.02em] text-neutral-950">{formatDate(selectedCustomer.lastVisit)}</p>
+                <p className="mt-2 text-xs text-[var(--muted)]">Last touchpoint from consultation or order timeline.</p>
               </div>
 
               <div className="rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">

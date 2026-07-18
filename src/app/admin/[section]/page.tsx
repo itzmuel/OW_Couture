@@ -5,6 +5,7 @@ import { AdminCollectionsPageClient } from "@/components/admin/admin-collections
 import { AdminCustomersPageClient } from "@/components/admin/admin-customers-page-client";
 import { AdminMeasurementsPageClient } from "@/components/admin/admin-measurements-page-client";
 import { AdminOrdersPageClient } from "@/components/admin/admin-orders-page-client";
+import { AdminOperationsPageClient } from "@/components/admin/admin-operations-page-client";
 import { AdminPaymentsPageClient } from "@/components/admin/admin-payments-page-client";
 import { AdminProductsPageClient } from "@/components/admin/admin-products-page-client";
 import { AdminProductionPageClient } from "@/components/admin/admin-production-page-client";
@@ -73,6 +74,17 @@ export default async function AdminSectionRoute({
 
   if (section === "team") {
     return <AdminTeamPageClient />;
+  }
+
+  if (
+    section === "shipping" ||
+    section === "inventory" ||
+    section === "gallery" ||
+    section === "reviews" ||
+    section === "marketing" ||
+    section === "settings"
+  ) {
+    return <AdminOperationsPageClient section={section} />;
   }
 
   return <AdminSectionPage section={section} />;

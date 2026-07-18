@@ -182,6 +182,8 @@ export async function GET() {
     topSellingItems.length > 0
       ? topSellingItems.map((item) => item.productName).join(" / ")
       : "No order items yet";
+  const weekLabels = weekStarts.map((weekStart) => formatWeekLabel(weekStart));
+  const topSellingLabels = topSellingItems.length > 0 ? topSellingItems.map((item) => item.productName) : ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"];
 
   const payload: AdminDashboardPayload = {
     greetingName: "Olivia",
@@ -195,12 +197,48 @@ export async function GET() {
       { label: "Recent Requests", value: String(recentRequests), tone: "muted" },
     ],
     chartTiles: [
-      { title: "Revenue", values: revenueSeries, subtitle: `Weeks of ${formatWeekLabel(weekStarts[0])} to ${formatWeekLabel(weekStarts[7])}` },
-      { title: "Monthly Orders", values: monthlyOrdersSeries, subtitle: "Weekly order intake" },
-      { title: "Top Selling Dresses", values: topSellingSeries, subtitle: topSellingSubtitle },
-      { title: "Consultations", values: consultationsSeries, subtitle: "Weekly consultation demand" },
-      { title: "Orders In Production", values: productionSeries, subtitle: "Weekly production load" },
-      { title: "Returning Customers", values: returningCustomersSeries, subtitle: "Customers with repeat weekly orders" },
+      {
+        title: "Revenue",
+        values: revenueSeries,
+        labels: weekLabels,
+        subtitle: `Weeks of ${formatWeekLabel(weekStarts[0])} to ${formatWeekLabel(weekStarts[7])}`,
+        valueFormat: "currency",
+      },
+      {
+        title: "Monthly Orders",
+        values: monthlyOrdersSeries,
+        labels: weekLabels,
+        subtitle: "Weekly order intake",
+        valueFormat: "number",
+      },
+      {
+        title: "Top Selling Dresses",
+        values: topSellingSeries,
+        labels: topSellingLabels,
+        subtitle: topSellingSubtitle,
+        valueFormat: "number",
+      },
+      {
+        title: "Consultations",
+        values: consultationsSeries,
+        labels: weekLabels,
+        subtitle: "Weekly consultation demand",
+        valueFormat: "number",
+      },
+      {
+        title: "Orders In Production",
+        values: productionSeries,
+        labels: weekLabels,
+        subtitle: "Weekly production load",
+        valueFormat: "number",
+      },
+      {
+        title: "Returning Customers",
+        values: returningCustomersSeries,
+        labels: weekLabels,
+        subtitle: "Customers with repeat weekly orders",
+        valueFormat: "number",
+      },
     ],
     notes: [
       "Recent Requests currently reflects consultation activity in the last 7 days.",
