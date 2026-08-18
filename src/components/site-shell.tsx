@@ -183,9 +183,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           All our pieces are made exclusively on a pre-order basis. Production time varies by design. See individual product pages for estimates.
         </div>
         <header className="border-b border-black/8 bg-[rgba(255,255,255,0.85)] backdrop-blur-2xl">
-          <div className="mx-auto flex h-[72px] w-full max-w-[1180px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex h-[72px] w-full max-w-[1180px] items-center justify-between gap-6 px-4 sm:px-6 lg:h-[84px] lg:px-8">
             <Link href="/" className="inline-flex items-center">
-              <BrandLogo className="h-14 w-auto" priority />
+              <BrandLogo className="h-14 w-auto lg:h-[72px]" priority />
             </Link>
             <nav className="flex max-w-[58vw] items-center gap-2 overflow-x-auto whitespace-nowrap text-[13px] text-neutral-800 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navigation.map((item) => {
@@ -295,7 +295,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         </header>
       </div>
 
-      <div className="pt-[106px]">{children}</div>
+      <div className="pt-[106px] lg:pt-[118px]">{children}</div>
 
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/35 p-4 pt-24 sm:pt-28">
