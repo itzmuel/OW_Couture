@@ -588,7 +588,6 @@ export function AdminOperationsPageClient({ section }: { section: Extract<AdminS
             ) : (
               mediaAssets.map((asset) => (
                 <div key={asset.path} className="group overflow-hidden rounded-2xl border border-[var(--line)] bg-white transition duration-200 hover:-translate-y-0.5 hover:border-black hover:shadow-[0_10px_25px_rgba(0,0,0,0.08)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={asset.url} alt={asset.name} className="h-40 w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
                   <div className="grid gap-2 p-3">
                     <p className="truncate text-xs text-neutral-700">{asset.name}</p>

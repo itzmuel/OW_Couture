@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-context";
 import {
@@ -51,17 +51,92 @@ export function BookingForm() {
   const [submission, setSubmission] = useState<BookingSubmission | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentState, setPaymentState] = useState<string | null>(null);
+  const [paymentNotice, setPaymentNotice] = useState("");
+  const [paymentNoticeTone, setPaymentNoticeTone] = useState<"success" | "warning" | "error">("success");
   const { currentUser } = useAuth();
+
+  useEffect(() => {
+    const syncPaymentState = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const payment = params.get("payment");
+      const sessionId = params.get("session_id");
+      const submissionId = params.get("submission");
+      setPaymentState(payment);
+
+      if (!payment) {
+        return;
+      }
+
+      try {
+        const query = new URLSearchParams();
+        if (payment) {
+          query.set("payment", payment);
+        }
+        if (sessionId) {
+          query.set("session_id", sessionId);
+        }
+        if (submissionId) {
+          query.set("submission", submissionId);
+        }
+
+        const response = await fetch(`/api/consultation/payment-status?${query.toString()}`, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const payload = (await response.json()) as {
+          message?: string;
+          status?: "unpaid" | "checkout-created" | "paid" | "cancelled" | "failed";
+        };
+
+        if (!response.ok) {
+          setPaymentNotice(payload.message ?? "We could not verify payment status yet. Please contact support if needed.");
+          setPaymentNoticeTone("error");
+          return;
+        }
+
+        if (payload.status === "paid") {
+          setPaymentNotice("Payment received. Your consultation request is now in review and our team will contact you shortly.");
+          setPaymentNoticeTone("success");
+          return;
+        }
+
+        if (payload.status === "cancelled") {
+          setPaymentNotice("Payment was cancelled. You can submit the form again to restart checkout.");
+          setPaymentNoticeTone("warning");
+          return;
+        }
+
+        if (payload.status === "failed") {
+          setPaymentNotice("Payment did not complete. Please submit again to retry Stripe checkout.");
+          setPaymentNoticeTone("error");
+          return;
+        }
+
+        setPaymentNotice("Checkout is in progress. Complete your payment to lock your consultation.");
+        setPaymentNoticeTone("warning");
+      } catch {
+        setPaymentNotice("We could not verify payment status yet. Please contact support if needed.");
+        setPaymentNoticeTone("error");
+      }
+    };
+
+    void syncPaymentState();
+  }, []);
 
   if (submission) {
     return (
       <div className="rounded-[30px] border border-[var(--line)] bg-[#fafafa] p-5 sm:p-7">
         <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Consultation booked</p>
         <h3 className="mt-3 text-3xl leading-[0.98] tracking-[-0.04em] text-neutral-950 sm:text-4xl">Thank you, {submission.name}.</h3>
+        {submitError ? (
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{submitError}</p>
+        ) : null}
         <div className="mt-5 rounded-[24px] border border-[#d8d8d8] bg-white p-5 text-sm leading-7 text-neutral-700">
           <p><b>Step 1:</b> Consultation request received.</p>
-          <p><b>Step 2:</b> Check {submission.email} for confirmation.</p>
-          <p><b>Step 3:</b> Admin will review and finalize your slot shortly.</p>
+          <p><b>Step 2:</b> Complete payment using the Stripe checkout link.</p>
+          <p><b>Step 3:</b> Admin will review and finalize your slot after payment is completed.</p>
         </div>
         <div className="mt-4 grid gap-2 rounded-[24px] border border-[var(--line)] bg-white p-5 text-sm leading-6 text-neutral-700 sm:grid-cols-2">
           <p><b>Date:</b> {formatDate(submission.date)}</p>
@@ -107,11 +182,52 @@ export function BookingForm() {
           return;
         }
 
-        setSubmission(createdSubmission.submission);
+        const checkoutResponse = await fetch("/api/consultation/checkout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            submissionId: createdSubmission.submission.id,
+            name: createdSubmission.submission.name,
+            email: createdSubmission.submission.email,
+          }),
+        });
+
+        const checkoutPayload = (await checkoutResponse.json()) as {
+          message?: string;
+          url?: string;
+        };
+
+        if (!checkoutResponse.ok || !checkoutPayload.url) {
+          setSubmission(createdSubmission.submission);
+          setSubmitError(
+            checkoutPayload.message ??
+              "Your consultation request was saved, but we could not open Stripe checkout. Please contact support to complete payment.",
+          );
+          setIsSubmitting(false);
+          event.currentTarget.reset();
+          return;
+        }
+
+        window.location.assign(checkoutPayload.url);
         setIsSubmitting(false);
         event.currentTarget.reset();
       }}
     >
+      {paymentState ? (
+        <p
+          className={`rounded-xl px-4 py-3 text-sm ${
+            paymentNoticeTone === "success"
+              ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+              : paymentNoticeTone === "warning"
+                ? "border border-amber-200 bg-amber-50 text-amber-700"
+                : "border border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {paymentNotice || "Checking payment status..."}
+        </p>
+      ) : null}
       <div className="grid gap-4">
         <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Contact details</p>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -199,7 +315,7 @@ export function BookingForm() {
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{submitError}</p>
       ) : null}
       <div className="flex flex-col gap-4 border-t border-[var(--line)] pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-6 text-[var(--muted)]">$50 non-refundable fee required to lock your appointment.</p>
+        <p className="text-sm leading-6 text-[var(--muted)]">$50 non-refundable fee required to lock your appointment. You will be redirected to secure Stripe checkout.</p>
         <button type="submit" disabled={isSubmitting} className="w-full rounded-full border border-black bg-black px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto">
           {isSubmitting ? "Submitting..." : "Pay $50 & Book"}
         </button>

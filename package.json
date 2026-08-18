@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "supabase:login": "supabase login",
     "supabase:link": "supabase link",
     "supabase:db:push": "supabase db push",
@@ -22,7 +22,8 @@
     "@supabase/supabase-js": "^2.110.7",
     "next": "^16.2.10",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "stripe": "^22.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",

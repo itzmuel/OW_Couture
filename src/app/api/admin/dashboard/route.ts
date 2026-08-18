@@ -186,7 +186,7 @@ export async function GET() {
   const topSellingLabels = topSellingItems.length > 0 ? topSellingItems.map((item) => item.productName) : ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"];
 
   const payload: AdminDashboardPayload = {
-    greetingName: "Olivia",
+    greetingName: "there",
     summaryCards: [
       { label: "Today's Revenue", value: formatMoney(todaysRevenue) },
       { label: "Orders Awaiting Review", value: String(ordersAwaitingReview) },

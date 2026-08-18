@@ -54,6 +54,21 @@ export const metadata: Metadata = {
       "Made-to-order luxury bridal and evening wear.",
     type: "website",
     locale: "en_CA",
+    images: [
+      {
+        url: "/ow-couture-logo.png",
+        width: 768,
+        height: 768,
+        alt: "OW Couture logo",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "OW Couture",
+    description: "Made-to-order luxury bridal and evening wear.",
+    images: ["/ow-couture-logo.png"],
   },
 };
 

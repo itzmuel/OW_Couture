@@ -256,7 +256,6 @@ export function AdminProductsPageClient() {
 
               {draft.image ? (
                 <div className="mt-3 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--soft)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={draft.image} alt={draft.name || "Selected product image"} className="h-36 w-full object-cover" />
                 </div>
               ) : null}
@@ -276,7 +275,6 @@ export function AdminProductsPageClient() {
                         draft.image === asset.url ? "border-black bg-[var(--soft)]" : "border-[var(--line)]"
                       }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={asset.url} alt={asset.name} className="h-20 w-full rounded-lg object-cover" />
                       <p className="truncate text-xs text-neutral-700">{asset.name}</p>
                     </button>

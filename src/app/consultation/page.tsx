@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 const consultationSteps = [
   "Share your event, timing, and preferred silhouette.",
-  "Receive a follow-up within 24 hours with next-step guidance.",
-  "Book a studio or virtual fitting and refine the piece together.",
+  "Complete secure Stripe checkout for the consultation deposit.",
+  "Receive a follow-up within 24 hours to confirm your fitting details.",
 ];
 
 export default function ConsultationPage() {

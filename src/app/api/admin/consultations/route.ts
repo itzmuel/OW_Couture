@@ -14,7 +14,7 @@ export async function GET() {
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
     .from("consultation_submissions")
-    .select("id,user_id,name,email,phone,requested_date,requested_time,consultation_type,request,status,created_at")
+    .select("id,user_id,name,email,phone,requested_date,requested_time,consultation_type,request,status,stripe_checkout_session_id,stripe_payment_status,consultation_fee_amount_cents,paid_at,created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -44,12 +44,32 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Invalid status value." }, { status: 400 });
   }
 
+  if (payload.status === "confirmed") {
+    const adminClient = createSupabaseAdminClient();
+    const { data: existingSubmission, error: existingError } = await adminClient
+      .from("consultation_submissions")
+      .select("stripe_payment_status")
+      .eq("id", payload.id)
+      .maybeSingle();
+
+    if (existingError || !existingSubmission) {
+      return NextResponse.json({ message: existingError?.message ?? "Consultation not found." }, { status: 404 });
+    }
+
+    if (existingSubmission.stripe_payment_status !== "paid") {
+      return NextResponse.json(
+        { message: "Cannot confirm consultation before deposit payment is marked paid." },
+        { status: 400 },
+      );
+    }
+  }
+
   const adminClient = createSupabaseAdminClient();
   const { data, error } = await adminClient
     .from("consultation_submissions")
     .update({ status: payload.status })
     .eq("id", payload.id)
-    .select("id,user_id,name,email,phone,requested_date,requested_time,consultation_type,request,status,created_at")
+    .select("id,user_id,name,email,phone,requested_date,requested_time,consultation_type,request,status,stripe_checkout_session_id,stripe_payment_status,consultation_fee_amount_cents,paid_at,created_at")
     .single();
 
   if (error) {

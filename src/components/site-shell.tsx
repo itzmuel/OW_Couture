@@ -60,12 +60,14 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }, [currentUser, isReady, pathname, router]);
 
   const navigation = useMemo(() => {
-    return filterAdminLinks(getNavigation(pathname), hasAdminAccess);
-  }, [hasAdminAccess, pathname]);
+    const canSeeAdminLink = Boolean(currentUser) && hasAdminAccess;
+    return filterAdminLinks(getNavigation(pathname), canSeeAdminLink);
+  }, [currentUser, hasAdminAccess, pathname]);
 
   const searchableItems = useMemo(() => {
-    return filterAdminLinks(searchablePages, hasAdminAccess);
-  }, [hasAdminAccess]);
+    const canSeeAdminLink = Boolean(currentUser) && hasAdminAccess;
+    return filterAdminLinks(searchablePages, canSeeAdminLink);
+  }, [currentUser, hasAdminAccess]);
 
   const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

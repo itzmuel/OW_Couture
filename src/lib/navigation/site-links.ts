@@ -29,6 +29,7 @@ const homeNav: NavItem[] = [
   { href: "/#collections", label: "Collections", match: () => false },
   { href: "/gallery", label: "Gallery", match: (pathname) => pathname.startsWith("/gallery") },
   { href: "/consultation", label: "Book Consultation", match: (pathname) => pathname === "/consultation" },
+  { href: "/admin", label: "Admin", match: (pathname) => pathname.startsWith("/admin") },
   { href: "/#about", label: "About Us", match: () => false },
   { href: "/#contact", label: "Contact", match: () => false },
 ];
@@ -39,6 +40,7 @@ const collectionNav: NavItem[] = [
   { href: "/collections/rtw", label: "RTW Collection", match: (pathname) => pathname === "/collections/rtw" },
   { href: "/collections/evening", label: "Bridesmaids & Evening", match: (pathname) => pathname === "/collections/evening" },
   { href: "/consultation", label: "Consultation", match: (pathname) => pathname === "/consultation" },
+  { href: "/admin", label: "Admin", match: (pathname) => pathname.startsWith("/admin") },
 ];
 
 const catalogNav: NavItem[] = [
@@ -48,6 +50,7 @@ const catalogNav: NavItem[] = [
   { href: "/collections/rtw", label: "RTW Collection", match: (pathname) => pathname === "/collections/rtw" },
   { href: "/collections/evening", label: "Evening", match: (pathname) => pathname === "/collections/evening" },
   { href: "/consultation", label: "Consultation", match: (pathname) => pathname === "/consultation" },
+  { href: "/admin", label: "Admin", match: (pathname) => pathname.startsWith("/admin") },
 ];
 
 const adminNav: NavItem[] = [
@@ -61,6 +64,7 @@ const accountNav: NavItem[] = [
   { href: "/", label: "Home", match: (pathname) => pathname === "/" },
   { href: "/catalog", label: "Catalog", match: (pathname) => pathname.startsWith("/catalog") },
   { href: "/consultation", label: "Consultation", match: (pathname) => pathname === "/consultation" },
+  { href: "/admin", label: "Admin", match: (pathname) => pathname.startsWith("/admin") },
   { href: "/account", label: "Account", match: (pathname) => pathname.startsWith("/account") },
 ];
 

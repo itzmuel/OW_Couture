@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAdminAccess } from "@/components/admin/use-admin-access";
 import {
-  allAdminPermissions,
   defaultRolePermissions,
   permissionLabels,
   type AdminPermission,

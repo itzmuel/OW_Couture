@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/components/auth-context";
 import type { AdminDashboardPayload } from "@/lib/admin/dashboard";
 
 const quickActions = [
@@ -57,9 +58,13 @@ function formatBarTopValue(value: number, valueFormat: "currency" | "number") {
 }
 
 export function AdminDashboard() {
+  const { currentUser } = useAuth();
   const [dashboard, setDashboard] = useState<AdminDashboardPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+
+  const signedInFirstName = currentUser?.name.trim().split(" ")[0];
+  const greetingName = signedInFirstName || dashboard?.greetingName || "there";
 
   useEffect(() => {
     let isMounted = true;
@@ -100,7 +105,7 @@ export function AdminDashboard() {
       <header className="rounded-[30px] border border-[var(--line)] bg-white p-6 sm:p-8">
         <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Dashboard</p>
         <h2 className="mt-2 text-[clamp(30px,4vw,52px)] leading-[1] tracking-[-0.05em] text-neutral-950">
-          Good morning, {dashboard?.greetingName ?? "Olivia"}
+          Good morning, {greetingName}
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)] sm:text-base">
           This command center tracks revenue, orders, production flow, consultations, and customer engagement in one place.

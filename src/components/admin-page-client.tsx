@@ -48,11 +48,30 @@ function StatusButton({
   );
 }
 
+function getPaymentBadgeClass(status: "unpaid" | "checkout-created" | "paid" | "cancelled" | "failed") {
+  if (status === "paid") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (status === "checkout-created") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  if (status === "failed" || status === "cancelled") {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+
+  return "border-neutral-200 bg-neutral-100 text-neutral-700";
+}
+
 export function AdminPageClient() {
   const { hasPermission } = useAdminAccess();
   const [submissions, setSubmissions] = useState<ConsultationSubmission[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ConsultationStatus>("all");
+  const [paymentFilter, setPaymentFilter] = useState<
+    "all" | "unpaid" | "checkout-created" | "paid" | "cancelled" | "failed"
+  >("all");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -78,6 +97,10 @@ export function AdminPageClient() {
         consultation_type: string;
         request: string;
         status: ConsultationStatus;
+        stripe_checkout_session_id: string | null;
+        stripe_payment_status: "unpaid" | "checkout-created" | "paid" | "cancelled" | "failed";
+        consultation_fee_amount_cents: number | null;
+        paid_at: string | null;
         created_at: string;
       }>;
     };
@@ -101,6 +124,10 @@ export function AdminPageClient() {
         consultationType: row.consultation_type,
         request: row.request,
         status: row.status,
+        stripeCheckoutSessionId: row.stripe_checkout_session_id,
+        stripePaymentStatus: row.stripe_payment_status,
+        consultationFeeAmountCents: row.consultation_fee_amount_cents ?? 5000,
+        paidAt: row.paid_at,
         submittedAt: row.created_at,
       } satisfies ConsultationSubmission;
     });
@@ -143,15 +170,17 @@ export function AdminPageClient() {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     return submissions.filter((submission) => {
       const statusMatch = statusFilter === "all" || submission.status === statusFilter;
+      const paymentStatus = submission.stripePaymentStatus ?? "unpaid";
+      const paymentMatch = paymentFilter === "all" || paymentStatus === paymentFilter;
       const searchMatch =
         normalizedSearch.length === 0 ||
         submission.name.toLowerCase().includes(normalizedSearch) ||
         submission.email.toLowerCase().includes(normalizedSearch) ||
         submission.consultationType.toLowerCase().includes(normalizedSearch);
 
-      return statusMatch && searchMatch;
+      return statusMatch && paymentMatch && searchMatch;
     });
-  }, [searchTerm, statusFilter, submissions]);
+  }, [searchTerm, statusFilter, paymentFilter, submissions]);
 
   const setStatus = async (id: string, status: ConsultationStatus) => {
     if (!hasPermission("consultations:manage")) {
@@ -231,7 +260,7 @@ export function AdminPageClient() {
               </p>
             ) : (
               <div className="mt-5 grid gap-4">
-                <div className="grid gap-3 rounded-2xl border border-[var(--line)] p-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div className="grid gap-3 rounded-2xl border border-[var(--line)] p-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
                   <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
                     Search
                     <input
@@ -254,6 +283,25 @@ export function AdminPageClient() {
                       <option value="confirmed">Confirmed</option>
                     </select>
                   </label>
+                  <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Payment
+                    <select
+                      value={paymentFilter}
+                      onChange={(event) =>
+                        setPaymentFilter(
+                          event.target.value as "all" | "unpaid" | "checkout-created" | "paid" | "cancelled" | "failed",
+                        )
+                      }
+                      className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900"
+                    >
+                      <option value="all">All payments</option>
+                      <option value="unpaid">Unpaid</option>
+                      <option value="checkout-created">Checkout created</option>
+                      <option value="paid">Paid</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="failed">Failed</option>
+                    </select>
+                  </label>
                 </div>
 
                 {filteredSubmissions.length === 0 ? (
@@ -269,7 +317,16 @@ export function AdminPageClient() {
                         <p className="text-sm font-semibold text-neutral-950">{submission.name}</p>
                         <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">{submission.consultationType}</p>
                       </div>
-                      <p className="text-xs text-[var(--muted)]">{formatSubmittedDate(submission.submittedAt)}</p>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] ${getPaymentBadgeClass(
+                            submission.stripePaymentStatus ?? "unpaid",
+                          )}`}
+                        >
+                          {submission.stripePaymentStatus ?? "unpaid"}
+                        </span>
+                        <p className="text-xs text-[var(--muted)]">{formatSubmittedDate(submission.submittedAt)}</p>
+                      </div>
                     </div>
                     <div className="mt-3 grid gap-1 text-sm text-neutral-700 sm:grid-cols-2">
                       <p>
@@ -288,6 +345,20 @@ export function AdminPageClient() {
                       <p>Time: {submission.time || "Not provided"}</p>
                     </div>
                     <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{submission.request}</p>
+                    <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--soft)] px-3 py-2 text-xs text-neutral-700">
+                      <p>
+                        Payment status: <b>{submission.stripePaymentStatus ?? "unpaid"}</b>
+                      </p>
+                      <p>
+                        Deposit: <b>${((submission.consultationFeeAmountCents ?? 5000) / 100).toFixed(2)} CAD</b>
+                      </p>
+                      <p>
+                        Stripe session: <b>{submission.stripeCheckoutSessionId ?? "Not started"}</b>
+                      </p>
+                      <p>
+                        Paid at: <b>{submission.paidAt ? formatSubmittedDate(submission.paidAt) : "Not paid"}</b>
+                      </p>
+                    </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <StatusButton label="new" isActive={submission.status === "new"} onClick={() => setStatus(submission.id, "new")} />
                       <StatusButton label="in-progress" isActive={submission.status === "in-progress"} onClick={() => setStatus(submission.id, "in-progress")} />

@@ -14,6 +14,10 @@ export type ConsultationSubmission = {
   submittedAt: string;
   status: ConsultationStatus;
   userId: string | null;
+  stripeCheckoutSessionId?: string | null;
+  stripePaymentStatus?: "unpaid" | "checkout-created" | "paid" | "cancelled" | "failed";
+  consultationFeeAmountCents?: number;
+  paidAt?: string | null;
 };
 
 export type ConsultationSubmissionInput = Omit<
@@ -32,6 +36,10 @@ type ConsultationSubmissionRow = {
   consultation_type: string;
   request: string;
   status: ConsultationStatus;
+  stripe_checkout_session_id?: string | null;
+  stripe_payment_status?: "unpaid" | "checkout-created" | "paid" | "cancelled" | "failed";
+  consultation_fee_amount_cents?: number | null;
+  paid_at?: string | null;
   created_at: string;
 };
 
@@ -47,6 +55,10 @@ function mapRowToSubmission(row: ConsultationSubmissionRow): ConsultationSubmiss
     consultationType: row.consultation_type,
     request: row.request,
     status: row.status,
+    stripeCheckoutSessionId: row.stripe_checkout_session_id ?? null,
+    stripePaymentStatus: row.stripe_payment_status ?? "unpaid",
+    consultationFeeAmountCents: row.consultation_fee_amount_cents ?? 5000,
+    paidAt: row.paid_at ?? null,
     submittedAt: row.created_at,
   };
 }
@@ -66,7 +78,7 @@ export async function addConsultationSubmission(input: ConsultationSubmissionInp
       consultation_type: input.consultationType,
       request: input.request,
     })
-    .select("id,user_id,name,email,phone,requested_date,requested_time,consultation_type,request,status,created_at")
+    .select("id,user_id,name,email,phone,requested_date,requested_time,consultation_type,request,status,stripe_checkout_session_id,stripe_payment_status,consultation_fee_amount_cents,paid_at,created_at")
     .single();
 
   if (error || !data) {
