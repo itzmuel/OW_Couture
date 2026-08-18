@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { BrandLogo } from "@/components/brand-logo";
 import { CartBubble } from "@/components/cart-bubble";
+import { useCart } from "@/components/cart-context";
 import { filterAdminLinks } from "@/lib/navigation/link-visibility";
 import { footerContent, getNavigation, searchablePages, wishlistLinks } from "@/lib/navigation/site-links";
 
@@ -14,8 +15,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, isReady, logOut } = useAuth();
+  const { items, count, removeFromCart, clearCart } = useCart();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [hasAdminAccess, setHasAdminAccess] = useState(pathname.startsWith("/admin"));
 
@@ -79,7 +82,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }, [searchQuery, searchableItems]);
 
   useEffect(() => {
-    if (!isSearchOpen && !isWishlistOpen) {
+    if (!isSearchOpen && !isWishlistOpen && !isCartOpen) {
       return;
     }
 
@@ -90,6 +93,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       if (event.key === "Escape") {
         setIsSearchOpen(false);
         setIsWishlistOpen(false);
+        setIsCartOpen(false);
       }
     };
 
@@ -99,7 +103,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [isSearchOpen, isWishlistOpen]);
+  }, [isSearchOpen, isWishlistOpen, isCartOpen]);
 
   useEffect(() => {
     const revealTargets = Array.from(
@@ -179,9 +183,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           All our pieces are made exclusively on a pre-order basis. Production time varies by design. See individual product pages for estimates.
         </div>
         <header className="border-b border-black/8 bg-[rgba(255,255,255,0.85)] backdrop-blur-2xl">
-          <div className="mx-auto flex h-[58px] w-full max-w-[1180px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex h-[72px] w-full max-w-[1180px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
             <Link href="/" className="inline-flex items-center">
-              <BrandLogo className="h-9 w-auto" priority />
+              <BrandLogo className="h-14 w-auto" priority />
             </Link>
             <nav className="flex max-w-[58vw] items-center gap-2 overflow-x-auto whitespace-nowrap text-[13px] text-neutral-800 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navigation.map((item) => {
@@ -260,7 +264,17 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               >
                 &#9825;
               </button>
-              <span aria-label="Shopping bag" title="Shopping bag" className="relative inline-flex items-center">
+              <button
+                type="button"
+                aria-label="Shopping bag"
+                title="Shopping bag"
+                className="relative inline-flex items-center rounded-full p-1 transition hover:bg-black/5"
+                onClick={() => {
+                  setIsSearchOpen(false);
+                  setIsWishlistOpen(false);
+                  setIsCartOpen(true);
+                }}
+              >
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 24 24"
@@ -275,13 +289,13 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                   <path d="M9 10V7a3 3 0 0 1 6 0v3" />
                 </svg>
                 <CartBubble className="absolute -right-2.5 -top-2 min-w-[18px] text-center" />
-              </span>
+              </button>
             </div>
           </div>
         </header>
       </div>
 
-      <div className="pt-[92px]">{children}</div>
+      <div className="pt-[106px]">{children}</div>
 
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/35 p-4 pt-24 sm:pt-28">
@@ -371,10 +385,80 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50">
+          <button
+            type="button"
+            aria-label="Close cart"
+            className="absolute inset-0 bg-black/35"
+            onClick={() => setIsCartOpen(false)}
+          />
+          <aside className="absolute right-0 top-0 h-full w-full max-w-md bg-white p-6 shadow-[-20px_0_60px_rgba(0,0,0,0.22)]">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-4xl leading-[0.95] tracking-[-0.04em] text-neutral-950">Your Bag</h3>
+              <button
+                type="button"
+                className="rounded-full bg-[var(--soft)] px-3 py-1 text-sm"
+                onClick={() => setIsCartOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-[var(--muted)]">{count} item{count === 1 ? "" : "s"} in your bag.</p>
+
+            {items.length === 0 ? (
+              <p className="mt-6 rounded-2xl border border-[var(--line)] px-4 py-3 text-sm text-[var(--muted)]">
+                Your bag is empty. Add a dress with your size from the catalog.
+              </p>
+            ) : (
+              <div className="mt-5 grid max-h-[60vh] gap-3 overflow-y-auto pr-1">
+                {items.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-[var(--line)] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-neutral-950">{item.name}</p>
+                        <p className="text-xs text-[var(--muted)]">Code: {item.code}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">Size: {item.size}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">Qty: {item.quantity}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(item.id)}
+                        className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-neutral-700 hover:border-black"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={clearCart}
+                disabled={items.length === 0}
+                className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Clear bag
+              </button>
+              <Link
+                href="/consultation"
+                onClick={() => setIsCartOpen(false)}
+                className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900"
+              >
+                Continue to consultation
+              </Link>
+            </div>
+          </aside>
+        </div>
+      )}
+
       <footer className="border-t border-[var(--line)] bg-[var(--soft)]">
         <div className="mx-auto grid w-full max-w-[1180px] gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
           <div>
-            <BrandLogo className="h-12 w-auto" />
+            <BrandLogo className="h-16 w-auto" />
             <h2 className="mt-4 max-w-lg text-4xl leading-[0.95] tracking-[-0.055em] text-neutral-950 sm:text-5xl">
               {footerContent.heading}
             </h2>

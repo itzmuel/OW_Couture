@@ -24,7 +24,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <main className="overflow-x-hidden border-b border-[var(--line)] bg-[var(--soft)] py-10 sm:py-12">
       <div className="mx-auto grid w-full max-w-[1320px] gap-6 px-4 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
         <aside className="rounded-[28px] border border-[var(--line)] bg-white p-5 lg:sticky lg:top-[112px] lg:h-[calc(100vh-140px)] lg:overflow-y-auto">
-          <BrandLogo className="h-12 w-auto" />
+          <BrandLogo className="h-16 w-auto" />
           <h1 className="mt-3 text-2xl tracking-[-0.04em] text-neutral-950">Admin</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Business management system for couture operations.</p>
 

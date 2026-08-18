@@ -27,9 +27,8 @@ export async function GET(request: Request) {
   const submissionId = url.searchParams.get("submission")?.trim();
   const paymentState = url.searchParams.get("payment")?.trim();
 
-  const adminClient = createSupabaseAdminClient();
-
   if (paymentState === "cancelled" && submissionId) {
+    const adminClient = createSupabaseAdminClient();
     const { error } = await adminClient
       .from("consultation_submissions")
       .update({ stripe_payment_status: "cancelled" })
@@ -48,6 +47,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    const adminClient = createSupabaseAdminClient();
     const stripe = getStripeServerClient();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 

@@ -15,6 +15,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const { openDrawer } = useCustomizationDrawer();
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
   const [isOrderAdded, setIsOrderAdded] = useState(false);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [sizeError, setSizeError] = useState("");
 
   const sizeChartRows = [
     ["XS", "6", "34", "26", "36"],
@@ -36,6 +38,29 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
           <p className="text-sm font-semibold text-neutral-950">Estimated Production Time: {product.leadTime}</p>
           <p className="text-sm leading-7 text-[var(--muted)]">Additional measurements will be taken during your consultation.</p>
+          <label className="grid gap-2 text-xs uppercase tracking-[0.1em] text-[var(--muted)]">
+            Choose size
+            <select
+              value={selectedSize}
+              onChange={(event) => {
+                setSelectedSize(event.target.value);
+                if (event.target.value) {
+                  setSizeError("");
+                }
+              }}
+              className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition-colors focus:border-black"
+            >
+              <option value="">Select size</option>
+              <option value="XS">XS</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="XXL">XXL</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+          {sizeError ? <p className="text-xs text-red-700">{sizeError}</p> : null}
           <div className="flex flex-wrap gap-3 pt-1">
             <button
               type="button"
@@ -46,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </button>
             <button
               type="button"
-              onClick={() => openDrawer({ name: product.name, code: product.code })}
+              onClick={() => openDrawer({ name: product.name, code: product.code, size: selectedSize })}
               className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900"
             >
               Customize
@@ -54,7 +79,16 @@ export function ProductCard({ product }: ProductCardProps) {
             <button
               type="button"
               onClick={() => {
-                addToCart();
+                if (!selectedSize) {
+                  setSizeError("Please choose a size before adding to cart.");
+                  return;
+                }
+
+                addToCart({
+                  name: product.name,
+                  code: product.code,
+                  size: selectedSize,
+                });
                 setIsOrderAdded(true);
                 window.setTimeout(() => setIsOrderAdded(false), 1400);
               }}

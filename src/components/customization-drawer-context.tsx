@@ -7,6 +7,7 @@ import { useCart } from "@/components/cart-context";
 type DrawerProduct = {
   name: string;
   code: string;
+  size?: string;
 };
 
 type CustomizationDrawerContextValue = {
@@ -20,11 +21,13 @@ const CustomizationDrawerContext = createContext<CustomizationDrawerContextValue
 export function CustomizationDrawerProvider({ children }: { children: React.ReactNode }) {
   const { addToCart } = useCart();
   const [selectedProduct, setSelectedProduct] = useState<DrawerProduct | null>(null);
+  const [selectedSize, setSelectedSize] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isToastVisible, setIsToastVisible] = useState(false);
 
   const openDrawer = (product: DrawerProduct) => {
+    setSelectedSize(product.size ?? "");
     setSelectedProduct(product);
     setIsMounted(true);
     requestAnimationFrame(() => {
@@ -103,7 +106,11 @@ export function CustomizationDrawerProvider({ children }: { children: React.Reac
               className="mt-6 grid gap-4"
               onSubmit={(event) => {
                 event.preventDefault();
-                addToCart();
+                addToCart({
+                  name: selectedProduct.name,
+                  code: selectedProduct.code,
+                  size: selectedSize,
+                });
                 closeDrawer();
                 setIsToastVisible(true);
                 window.setTimeout(() => {
@@ -127,6 +134,25 @@ export function CustomizationDrawerProvider({ children }: { children: React.Reac
                   readOnly
                   className="rounded-2xl border border-[var(--line)] bg-[#f7f7f7] px-4 py-3 text-sm text-neutral-900"
                 />
+              </label>
+
+              <label className="grid gap-2 text-xs uppercase tracking-[0.1em] text-[var(--muted)]">
+                Size
+                <select
+                  required
+                  value={selectedSize}
+                  onChange={(event) => setSelectedSize(event.target.value)}
+                  className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition-colors focus:border-black"
+                >
+                  <option value="">Select size</option>
+                  <option value="XS">XS</option>
+                  <option value="S">S</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="XL">XL</option>
+                  <option value="XXL">XXL</option>
+                  <option value="Custom">Custom</option>
+                </select>
               </label>
 
               <label className="grid gap-2 text-xs uppercase tracking-[0.1em] text-[var(--muted)]">
