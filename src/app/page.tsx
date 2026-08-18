@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { defaultHomepageContent, type HomepageContent } from "@/lib/admin/website";
 
 const collectionCards = [
@@ -108,7 +109,9 @@ export default function Home() {
         />
         <div className="mx-auto flex min-h-[82vh] w-full max-w-[1180px] items-center justify-center px-4 text-center sm:px-6 lg:px-8">
           <div className="relative z-10 animate-[fadeIn_0.7s_ease_both]" style={{ transform: `translate3d(0, ${Math.min(heroOffset * 0.12, 36)}px, 0)` }}>
-            <h1 className="text-[clamp(44px,8vw,96px)] leading-[0.95] tracking-[-0.07em] text-white">OW Couture.</h1>
+            <div className="mx-auto w-fit rounded-[28px] bg-white/95 px-4 py-3 shadow-[0_18px_40px_rgba(0,0,0,0.26)] sm:px-6 sm:py-4">
+              <BrandLogo className="h-20 w-auto sm:h-24" priority />
+            </div>
             <h1 className="text-[clamp(44px,8vw,96px)] leading-[0.95] tracking-[-0.07em] text-white">{homepageContent.heroTitle}</h1>
             <p className="mt-4 text-lg text-white/85 sm:text-xl">{homepageContent.heroSubtitle}</p>
             <Link href="#collections" className="mt-6 inline-flex rounded-full bg-white px-6 py-3.5 text-sm font-medium text-black transition hover:-translate-y-0.5">

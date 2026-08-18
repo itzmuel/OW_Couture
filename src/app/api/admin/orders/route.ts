@@ -377,7 +377,7 @@ export async function PATCH(request: Request) {
   const adminClient = createSupabaseAdminClient();
   const { data: existingData, error: existingError } = await adminClient
     .from("orders")
-    .select("id,status,payment_status,production_stage")
+    .select("id,status,payment_status,production_stage,shipping_address")
     .eq("id", payload.id)
     .single();
 
@@ -392,6 +392,7 @@ export async function PATCH(request: Request) {
   const existingStage = isProductionStage(existingData.production_stage)
     ? existingData.production_stage
     : "payment-received";
+  const existingShippingAddress = typeof existingData.shipping_address === "string" ? existingData.shipping_address.trim() : "";
 
   let nextStatus: OrderStatus = existingStatus;
   let nextPaymentStatus: PaymentStatus = existingPaymentStatus;
@@ -430,6 +431,17 @@ export async function PATCH(request: Request) {
 
   if (payload.productionStage && isProductionStage(payload.productionStage)) {
     nextStage = payload.productionStage;
+  }
+
+  const nextShippingAddress = normalizedOrderDetails?.ok
+    ? (normalizedOrderDetails.value.shipping_address ?? "").trim()
+    : existingShippingAddress;
+
+  if ((nextStatus === "ready-to-ship" || payload.action === "ready-to-ship") && !nextShippingAddress) {
+    return NextResponse.json(
+      { message: "A delivery address is required before an order can be marked ready to ship." },
+      { status: 400 },
+    );
   }
 
   const updatePayload: {

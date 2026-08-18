@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { adminNavItems } from "@/lib/admin/navigation";
 import { useAdminAccess } from "@/components/admin/use-admin-access";
 
@@ -20,11 +21,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }, [allowedSections]);
 
   return (
-    <main className="border-b border-[var(--line)] bg-[var(--soft)] py-10 sm:py-12">
+    <main className="overflow-x-hidden border-b border-[var(--line)] bg-[var(--soft)] py-10 sm:py-12">
       <div className="mx-auto grid w-full max-w-[1320px] gap-6 px-4 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
         <aside className="rounded-[28px] border border-[var(--line)] bg-white p-5 lg:sticky lg:top-[112px] lg:h-[calc(100vh-140px)] lg:overflow-y-auto">
-          <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">OW Couture</p>
-          <h1 className="mt-2 text-2xl tracking-[-0.04em] text-neutral-950">Admin</h1>
+          <BrandLogo className="h-12 w-auto" />
+          <h1 className="mt-3 text-2xl tracking-[-0.04em] text-neutral-950">Admin</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Business management system for couture operations.</p>
 
           <nav className="mt-5 grid gap-1">

@@ -73,10 +73,10 @@ export function AdminCustomersPageClient() {
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
           <div className="overflow-x-auto">
-            <table className="min-w-[840px] text-left text-sm">
+            <table className="min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
                   <th className="px-2 py-3">Customer</th>
@@ -106,7 +106,7 @@ export function AdminCustomersPageClient() {
                     >
                       <td className="px-2 py-3">
                         <p className="font-medium text-neutral-900">{customer.name}</p>
-                        <p className="text-xs text-neutral-600">{customer.email}</p>
+                        <p className="break-all text-xs text-neutral-600">{customer.email}</p>
                       </td>
                       <td className="px-2 py-3 text-neutral-700">{customer.orderCount}</td>
                       <td className="px-2 py-3 text-neutral-700">{customer.consultationCount}</td>
@@ -132,10 +132,10 @@ export function AdminCustomersPageClient() {
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-sm text-neutral-700">{selectedCustomer.email}</p>
+                <p className="mt-1 break-all text-sm text-neutral-700">{selectedCustomer.email}</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 <div className="rounded-2xl border border-[var(--line)] p-4 text-sm text-neutral-700">
                   <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Orders</p>
                   <p className="mt-2 text-2xl text-neutral-950">{selectedCustomer.orderCount}</p>

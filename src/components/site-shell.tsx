@@ -2,15 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-context";
+import { BrandLogo } from "@/components/brand-logo";
 import { CartBubble } from "@/components/cart-bubble";
 import { filterAdminLinks } from "@/lib/navigation/link-visibility";
 import { footerContent, getNavigation, searchablePages, wishlistLinks } from "@/lib/navigation/site-links";
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentUser, isReady, logOut } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
@@ -45,6 +47,17 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       isMounted = false;
     };
   }, [currentUser, pathname]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    if (!currentUser && pathname.startsWith("/admin")) {
+      router.replace("/auth/login?next=/admin");
+      router.refresh();
+    }
+  }, [currentUser, isReady, pathname, router]);
 
   const navigation = useMemo(() => {
     return filterAdminLinks(getNavigation(pathname), hasAdminAccess);
@@ -165,8 +178,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         </div>
         <header className="border-b border-black/8 bg-[rgba(255,255,255,0.85)] backdrop-blur-2xl">
           <div className="mx-auto flex h-[58px] w-full max-w-[1180px] items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
-            <Link href="/" className="text-sm font-extrabold uppercase tracking-[0.08em] text-neutral-950">
-              OW COUTURE
+            <Link href="/" className="inline-flex items-center">
+              <BrandLogo className="h-9 w-auto" priority />
             </Link>
             <nav className="flex max-w-[58vw] items-center gap-2 overflow-x-auto whitespace-nowrap text-[13px] text-neutral-800 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {navigation.map((item) => {
@@ -195,7 +208,16 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                     <button
                       type="button"
                       className="hidden rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium transition hover:border-black sm:inline"
-                      onClick={logOut}
+                      onClick={() => {
+                        void (async () => {
+                          await logOut();
+
+                          if (pathname.startsWith("/admin")) {
+                            router.replace("/auth/login");
+                            router.refresh();
+                          }
+                        })();
+                      }}
                     >
                       Log out
                     </button>
@@ -350,7 +372,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-[var(--line)] bg-[var(--soft)]">
         <div className="mx-auto grid w-full max-w-[1180px] gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">{footerContent.brandLabel}</p>
+            <BrandLogo className="h-12 w-auto" />
             <h2 className="mt-4 max-w-lg text-4xl leading-[0.95] tracking-[-0.055em] text-neutral-950 sm:text-5xl">
               {footerContent.heading}
             </h2>

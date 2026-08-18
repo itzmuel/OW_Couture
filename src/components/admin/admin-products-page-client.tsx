@@ -180,10 +180,10 @@ export function AdminProductsPageClient() {
 
       {errorMessage ? <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-4 sm:p-5">
           <div className="overflow-x-auto">
-            <table className="min-w-[760px] text-left text-sm">
+            <table className="min-w-[700px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
                   <th className="px-2 py-3">Product</th>
@@ -211,25 +211,25 @@ export function AdminProductsPageClient() {
           </div>
         </section>
 
-        <section className="min-w-0 rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
+        <section className="min-w-0 overflow-hidden rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
           <div className="grid gap-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Slug<input value={draft.slug} onChange={(event) => setDraft((current) => ({ ...current, slug: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-              <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Code<input value={draft.code} onChange={(event) => setDraft((current) => ({ ...current, code: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Slug<input value={draft.slug} onChange={(event) => setDraft((current) => ({ ...current, slug: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+              <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Code<input value={draft.code} onChange={(event) => setDraft((current) => ({ ...current, code: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             </div>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Name<input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Category<input value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-              <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Collection<input value={draft.collection} onChange={(event) => setDraft((current) => ({ ...current, collection: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Name<input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Category<input value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+              <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Collection<input value={draft.collection} onChange={(event) => setDraft((current) => ({ ...current, collection: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             </div>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Tagline<input value={draft.tagline} onChange={(event) => setDraft((current) => ({ ...current, tagline: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Description<textarea rows={4} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Price From<input value={draft.priceFrom} onChange={(event) => setDraft((current) => ({ ...current, priceFrom: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-              <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Lead Time<input value={draft.leadTime} onChange={(event) => setDraft((current) => ({ ...current, leadTime: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Tagline<input value={draft.tagline} onChange={(event) => setDraft((current) => ({ ...current, tagline: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Description<textarea rows={4} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Price From<input value={draft.priceFrom} onChange={(event) => setDraft((current) => ({ ...current, priceFrom: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+              <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Lead Time<input value={draft.leadTime} onChange={(event) => setDraft((current) => ({ ...current, leadTime: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             </div>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Appointment Type<input value={draft.appointmentType} onChange={(event) => setDraft((current) => ({ ...current, appointmentType: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Image URL<input value={draft.image} onChange={(event) => setDraft((current) => ({ ...current, image: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Appointment Type<input value={draft.appointmentType} onChange={(event) => setDraft((current) => ({ ...current, appointmentType: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Image URL<input value={draft.image} onChange={(event) => setDraft((current) => ({ ...current, image: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <div className="rounded-2xl border border-[var(--line)] p-4">
               <p className="text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Media library</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -284,10 +284,10 @@ export function AdminProductsPageClient() {
                 )}
               </div>
             </div>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Palette<input value={draft.palette} onChange={(event) => setDraft((current) => ({ ...current, palette: event.target.value }))} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Materials<textarea rows={3} value={draft.materials.join("\n")} onChange={(event) => updateArrayField("materials", event.target.value)} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Made For<textarea rows={3} value={draft.madeFor.join("\n")} onChange={(event) => updateArrayField("madeFor", event.target.value)} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
-            <label className="grid gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Highlights<textarea rows={3} value={draft.highlights.join("\n")} onChange={(event) => updateArrayField("highlights", event.target.value)} className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Palette<input value={draft.palette} onChange={(event) => setDraft((current) => ({ ...current, palette: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Materials<textarea rows={3} value={draft.materials.join("\n")} onChange={(event) => updateArrayField("materials", event.target.value)} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Made For<textarea rows={3} value={draft.madeFor.join("\n")} onChange={(event) => updateArrayField("madeFor", event.target.value)} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Highlights<textarea rows={3} value={draft.highlights.join("\n")} onChange={(event) => updateArrayField("highlights", event.target.value)} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <div className="flex flex-wrap gap-4 text-sm text-neutral-800">
               <label className="flex items-center gap-2"><input type="checkbox" checked={draft.featured} onChange={(event) => setDraft((current) => ({ ...current, featured: event.target.checked }))} disabled={!hasPermission("products:manage")} /> Featured</label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={draft.archived} onChange={(event) => setDraft((current) => ({ ...current, archived: event.target.checked }))} disabled={!hasPermission("products:archive")} /> Archived</label>
