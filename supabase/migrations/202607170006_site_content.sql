@@ -40,7 +40,7 @@ values
       'testimonialTitle', 'Obsessed with your experience.',
       'testimonialBody', 'Timeless pieces. Your favourite outfit waiting to happen. Bringing dreams to reality.',
       'contactTitle', 'Contact',
-      'contactBody', 'Email: hello@owcouture.com\nFallback: info@owcouture.com\nInstagram: @OWCouture'
+      'contactBody', 'Email: hello@owcouture.ca\nFallback: info@owcouture.ca\nInstagram: @OWCouture'
     )
   )
 on conflict (key) do nothing;

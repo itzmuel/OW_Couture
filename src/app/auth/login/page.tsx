@@ -1,17 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { logIn } = useAuth();
   const [errorMessage, setErrorMessage] = useState("");
-  const isConfirmed = searchParams.get("confirmed") === "1";
+  const [isConfirmed, setIsConfirmed] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsConfirmed(params.get("confirmed") === "1");
+  }, []);
 
   return (
     <main className="border-b border-[var(--line)] py-16 sm:py-20">
