@@ -13,13 +13,23 @@ const galleryCards = [
     ],
   },
   {
-    title: "OW Couture Magazine",
+    title: "OW Couture Magazine 1",
     description: "Issue spreads featuring signature bridal and occasion storytelling.",
     images: [
-      "/gallery/owcouture-magazine-1.jpg",
-      "/gallery/owcouture-magazine-2.jpg",
-      "/gallery/owcouture-magazine-3.jpg",
-      "/gallery/owcouture-magazine-4.jpg",
+      "/gallery/magazine%201/IMG_2278.JPG.jpeg",
+      "/gallery/magazine%201/IMG_2279.JPG.jpeg",
+      "/gallery/magazine%201/IMG_2280.JPG.jpeg",
+      "/gallery/magazine%201/IMG_2281.JPG.jpeg",
+    ],
+  },
+  {
+    title: "OW Couture Magazine 2",
+    description: "Second issue pages grouped as one complete magazine set.",
+    images: [
+      "/gallery/magazine%202/IMG_3153.PNG",
+      "/gallery/magazine%202/IMG_3154.PNG",
+      "/gallery/magazine%202/IMG_3155.PNG",
+      "/gallery/magazine%202/IMG_3156.PNG",
     ],
   },
   {

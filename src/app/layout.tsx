@@ -23,7 +23,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://owcouture.com"),
+  metadataBase: new URL("https://owcouture.ca"),
 
   icons: {
     icon: "/ow-couture-logo.png",
