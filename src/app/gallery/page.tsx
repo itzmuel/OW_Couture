@@ -13,13 +13,13 @@ const galleryCards = [
     ],
   },
   {
-    title: "Evening Capsule",
-    description: "Structured silhouettes and soft movement in event wear.",
+    title: "OW Couture Magazine",
+    description: "Issue spreads featuring signature bridal and occasion storytelling.",
     images: [
-      "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80",
+      "/gallery/owcouture-magazine-1.jpg",
+      "/gallery/owcouture-magazine-2.jpg",
+      "/gallery/owcouture-magazine-3.jpg",
+      "/gallery/owcouture-magazine-4.jpg",
     ],
   },
   {
