@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useCart } from "@/components/cart-context";
 import { useCustomizationDrawer } from "@/components/customization-drawer-context";
 import type { Product } from "@/data/products";
 
@@ -10,11 +11,21 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
   const { openDrawer } = useCustomizationDrawer();
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isOrderAdded, setIsOrderAdded] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
   const [sizeError, setSizeError] = useState("");
+
+  const parsePriceToCents = (priceFrom: string) => {
+    const parsed = Number(priceFrom.replace(/[^0-9.]/g, ""));
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 0;
+    }
+
+    return Math.round(parsed * 100);
+  };
 
   const sizeChartRows = [
     ["XS", "6", "34", "26", "36"],
@@ -69,61 +80,40 @@ export function ProductCard({ product }: ProductCardProps) {
             </button>
             <button
               type="button"
-              onClick={() => openDrawer({ name: product.name, code: product.code, size: selectedSize })}
+              onClick={() =>
+                openDrawer({
+                  name: product.name,
+                  code: product.code,
+                  size: selectedSize,
+                  unitPriceCents: parsePriceToCents(product.priceFrom),
+                })
+              }
               className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900"
             >
               Customize
             </button>
             <button
               type="button"
-              onClick={async () => {
+              onClick={() => {
                 if (!selectedSize) {
-                  setSizeError("Please choose a size before checkout.");
+                  setSizeError("Please choose a size before ordering.");
                   return;
                 }
 
                 setSizeError("");
-                setIsCheckingOut(true);
-
-                try {
-                  const response = await fetch("/api/cart/checkout", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      items: [
-                        {
-                          code: product.code,
-                          name: product.name,
-                          size: selectedSize,
-                          quantity: 1,
-                        },
-                      ],
-                    }),
-                  });
-
-                  const payload = (await response.json()) as {
-                    message?: string;
-                    url?: string;
-                  };
-
-                  if (!response.ok || !payload.url) {
-                    setSizeError(payload.message ?? "Checkout is unavailable right now. Please try again.");
-                    setIsCheckingOut(false);
-                    return;
-                  }
-
-                  window.location.assign(payload.url);
-                } catch {
-                  setSizeError("Checkout is unavailable right now. Please try again.");
-                  setIsCheckingOut(false);
-                }
+                addToCart({
+                  name: product.name,
+                  code: product.code,
+                  size: selectedSize,
+                  quantity: 1,
+                  unitPriceCents: parsePriceToCents(product.priceFrom),
+                });
+                setIsOrderAdded(true);
+                window.setTimeout(() => setIsOrderAdded(false), 1400);
               }}
-              disabled={isCheckingOut}
-              className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition hover:-translate-y-0.5"
             >
-              {isCheckingOut ? "Redirecting..." : "Checkout"}
+              {isOrderAdded ? "Added" : "Order"}
             </button>
           </div>
         </div>

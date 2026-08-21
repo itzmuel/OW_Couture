@@ -8,6 +8,7 @@ type DrawerProduct = {
   name: string;
   code: string;
   size?: string;
+  unitPriceCents?: number;
 };
 
 type CustomizationDrawerContextValue = {
@@ -110,6 +111,7 @@ export function CustomizationDrawerProvider({ children }: { children: React.Reac
                   name: selectedProduct.name,
                   code: selectedProduct.code,
                   size: selectedSize,
+                  unitPriceCents: selectedProduct.unitPriceCents,
                 });
                 closeDrawer();
                 setIsToastVisible(true);

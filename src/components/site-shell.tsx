@@ -8,8 +8,27 @@ import { useAuth } from "@/components/auth-context";
 import { BrandLogo } from "@/components/brand-logo";
 import { CartBubble } from "@/components/cart-bubble";
 import { useCart } from "@/components/cart-context";
+import { products as staticProducts } from "@/data/products";
 import { filterAdminLinks } from "@/lib/navigation/link-visibility";
 import { footerContent, getNavigation, searchablePages, wishlistLinks } from "@/lib/navigation/site-links";
+
+const estimatedTaxRate = 0.13;
+
+function formatCad(cents: number) {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+  }).format(cents / 100);
+}
+
+function parsePriceToCents(priceFrom: string) {
+  const normalized = Number(priceFrom.replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(normalized) || normalized <= 0) {
+    return 0;
+  }
+
+  return Math.round(normalized * 100);
+}
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,6 +42,20 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const [checkoutError, setCheckoutError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [hasAdminAccess, setHasAdminAccess] = useState(pathname.startsWith("/admin"));
+
+  const priceByCode = useMemo(() => {
+    return new Map(staticProducts.map((product) => [product.code, parsePriceToCents(product.priceFrom)]));
+  }, []);
+
+  const subtotalCents = useMemo(() => {
+    return items.reduce((total, item) => {
+      const unitPrice = item.unitPriceCents > 0 ? item.unitPriceCents : (priceByCode.get(item.code) ?? 0);
+      return total + unitPrice * item.quantity;
+    }, 0);
+  }, [items, priceByCode]);
+
+  const estimatedTaxCents = Math.round(subtotalCents * estimatedTaxRate);
+  const estimatedTotalCents = subtotalCents + estimatedTaxCents;
 
   const startCartCheckout = async () => {
     if (items.length === 0 || isCheckoutSubmitting) {
@@ -460,6 +493,12 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                         <p className="text-xs text-[var(--muted)]">Code: {item.code}</p>
                         <p className="mt-1 text-xs text-[var(--muted)]">Size: {item.size}</p>
                         <p className="mt-1 text-xs text-[var(--muted)]">Qty: {item.quantity}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          Unit: {formatCad(item.unitPriceCents > 0 ? item.unitPriceCents : (priceByCode.get(item.code) ?? 0))}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-neutral-800">
+                          Line total: {formatCad((item.unitPriceCents > 0 ? item.unitPriceCents : (priceByCode.get(item.code) ?? 0)) * item.quantity)}
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -474,25 +513,55 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={clearCart}
-                disabled={items.length === 0 || isCheckoutSubmitting}
-                className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition disabled:cursor-not-allowed disabled:opacity-40"
+            <div className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--soft)] p-4 text-sm">
+              <div className="flex items-center justify-between gap-3 text-neutral-800">
+                <span>Subtotal</span>
+                <span>{formatCad(subtotalCents)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-neutral-700">
+                <span>Estimated tax (13%)</span>
+                <span>{formatCad(estimatedTaxCents)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-neutral-700">
+                <span>Shipping</span>
+                <span>Calculated at checkout</span>
+              </div>
+              <div className="mt-3 border-t border-[var(--line)] pt-3">
+                <div className="flex items-center justify-between gap-3 text-base font-semibold text-neutral-950">
+                  <span>Estimated total</span>
+                  <span>{formatCad(estimatedTotalCents)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3">
+              <Link
+                href="/catalog"
+                onClick={() => setIsCartOpen(false)}
+                className="inline-flex justify-center rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition hover:-translate-y-0.5"
               >
-                Clear bag
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  void startCartCheckout();
-                }}
-                disabled={items.length === 0 || isCheckoutSubmitting}
-                className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900"
-              >
-                {isCheckoutSubmitting ? "Redirecting..." : "Checkout"}
-              </button>
+                Continue shopping
+              </Link>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void startCartCheckout();
+                  }}
+                  disabled={items.length === 0 || isCheckoutSubmitting}
+                  className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isCheckoutSubmitting ? "Redirecting..." : "Checkout"}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearCart}
+                  disabled={items.length === 0 || isCheckoutSubmitting}
+                  className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Clear bag
+                </button>
+              </div>
             </div>
             {checkoutError ? <p className="mt-3 text-sm text-red-700">{checkoutError}</p> : null}
           </aside>

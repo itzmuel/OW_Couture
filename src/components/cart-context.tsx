@@ -8,6 +8,7 @@ export type CartItem = {
   code: string;
   size: string;
   quantity: number;
+  unitPriceCents: number;
 };
 
 type AddToCartInput = {
@@ -15,6 +16,7 @@ type AddToCartInput = {
   code?: string;
   size?: string;
   quantity?: number;
+  unitPriceCents?: number;
 };
 
 type CartContextValue = {
@@ -39,6 +41,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const name = input.name?.trim() || "OW Couture Piece";
         const code = input.code?.trim() || "OW-CUSTOM";
         const size = input.size?.trim() || "Unspecified";
+        const unitPriceCents = Math.max(0, Math.floor(input.unitPriceCents ?? 0));
 
         setItems((previous) => {
           const existingIndex = previous.findIndex((item) => item.code === code && item.size === size);
@@ -52,6 +55,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 code,
                 size,
                 quantity: nextQuantity,
+                unitPriceCents,
               },
             ];
           }
@@ -61,6 +65,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               ? {
                   ...item,
                   quantity: item.quantity + nextQuantity,
+                  unitPriceCents: unitPriceCents || item.unitPriceCents,
                 }
               : item,
           );
