@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/components/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { logIn } = useAuth();
   const [errorMessage, setErrorMessage] = useState("");
+  const isConfirmed = searchParams.get("confirmed") === "1";
 
   return (
     <main className="border-b border-[var(--line)] py-16 sm:py-20">
@@ -19,6 +21,12 @@ export default function LoginPage() {
         <p className="mt-4 text-base leading-8 text-[var(--muted)] sm:text-lg">
           Log in to access your account details.
         </p>
+
+        {isConfirmed ? (
+          <p className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            Email confirmed successfully. You can now log in.
+          </p>
+        ) : null}
 
         <form
           className="mt-8 grid gap-4 rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-6"

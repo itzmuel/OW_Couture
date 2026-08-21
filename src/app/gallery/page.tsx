@@ -4,32 +4,23 @@ import { useEffect, useRef, useState } from "react";
 
 const galleryCards = [
   {
-    title: "Bridal Process Highlights",
-    description: "Sketch to fitting moments from custom bridal builds.",
-    images: [
-      "https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=1200&q=80",
-    ],
-  },
-  {
     title: "OW Couture Magazine 1",
     description: "Issue spreads featuring signature bridal and occasion storytelling.",
     images: [
-      "/gallery/magazine%201/IMG_2278.JPG.jpeg",
-      "/gallery/magazine%201/IMG_2279.JPG.jpeg",
-      "/gallery/magazine%201/IMG_2280.JPG.jpeg",
-      "/gallery/magazine%201/IMG_2281.JPG.jpeg",
+      "/gallery/magazine 1/IMG_2278.JPG.jpeg",
+      "/gallery/magazine 1/IMG_2279.JPG.jpeg",
+      "/gallery/magazine 1/IMG_2280.JPG.jpeg",
+      "/gallery/magazine 1/IMG_2281.JPG.jpeg",
     ],
   },
   {
     title: "OW Couture Magazine 2",
     description: "Second issue pages grouped as one complete magazine set.",
     images: [
-      "/gallery/magazine%202/IMG_3153.PNG",
-      "/gallery/magazine%202/IMG_3154.PNG",
-      "/gallery/magazine%202/IMG_3155.PNG",
-      "/gallery/magazine%202/IMG_3156.PNG",
+      "/gallery/magazine 2/IMG_3153.PNG",
+      "/gallery/magazine 2/IMG_3154.PNG",
+      "/gallery/magazine 2/IMG_3155.PNG",
+      "/gallery/magazine 2/IMG_3156.PNG",
     ],
   },
   {
@@ -57,10 +48,47 @@ const galleryCards = [
 export default function GalleryPage() {
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [secondaryPreviewIndexes, setSecondaryPreviewIndexes] = useState<Record<number, number>>({});
+  const [pausedAutoplayCards, setPausedAutoplayCards] = useState<Record<number, boolean>>({});
   const touchStartX = useRef<number | null>(null);
   const touchCurrentX = useRef<number | null>(null);
 
   const activeCard = activeCardIndex === null ? null : galleryCards[activeCardIndex];
+
+  const isMagazineCard = (title: string) => title.startsWith("OW Couture Magazine");
+
+  useEffect(() => {
+    const autoplayCards = galleryCards
+      .map((card, cardIndex) => ({ card, cardIndex }))
+      .filter(({ card }) => isMagazineCard(card.title) && card.images.length > 2);
+
+    if (autoplayCards.length === 0) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setSecondaryPreviewIndexes((current) => {
+        const next = { ...current };
+
+        autoplayCards.forEach(({ card, cardIndex }) => {
+          if (pausedAutoplayCards[cardIndex]) {
+            return;
+          }
+
+          const min = 1;
+          const max = card.images.length - 1;
+          const currentIndex = next[cardIndex] ?? 1;
+          next[cardIndex] = (currentIndex - min + 1) % (max - min + 1) + min;
+        });
+
+        return next;
+      });
+    }, 3000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [pausedAutoplayCards]);
 
   useEffect(() => {
     if (activeCardIndex === null) {
@@ -104,6 +132,32 @@ export default function GalleryPage() {
 
   const closeLightbox = () => {
     setActiveCardIndex(null);
+  };
+
+  const getSecondaryImagePosition = (cardIndex: number, imageCount: number) => {
+    if (imageCount <= 1) {
+      return 0;
+    }
+
+    return secondaryPreviewIndexes[cardIndex] ?? 1;
+  };
+
+  const shiftSecondaryImage = (cardIndex: number, imageCount: number, direction: "next" | "previous") => {
+    if (imageCount <= 2) {
+      return;
+    }
+
+    setSecondaryPreviewIndexes((current) => {
+      const currentIndex = current[cardIndex] ?? 1;
+      const min = 1;
+      const max = imageCount - 1;
+      const nextIndex =
+        direction === "next"
+          ? (currentIndex - min + 1) % (max - min + 1) + min
+          : (currentIndex - min - 1 + (max - min + 1)) % (max - min + 1) + min;
+
+      return { ...current, [cardIndex]: nextIndex };
+    });
   };
 
   const showPreviousImage = () => {
@@ -170,23 +224,97 @@ export default function GalleryPage() {
                 data-scroll-delay={120 + cardIndex * 110}
                 data-scroll-direction={cardIndex % 2 === 0 ? "left" : "right"}
                 className="rounded-[28px] border border-[var(--line)] bg-white p-4 sm:p-5"
+                onMouseEnter={() => {
+                  if (isMagazineCard(card.title)) {
+                    setPausedAutoplayCards((current) => ({ ...current, [cardIndex]: true }));
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (isMagazineCard(card.title)) {
+                    setPausedAutoplayCards((current) => ({ ...current, [cardIndex]: false }));
+                  }
+                }}
+                onTouchStart={() => {
+                  if (isMagazineCard(card.title)) {
+                    setPausedAutoplayCards((current) => ({ ...current, [cardIndex]: true }));
+                  }
+                }}
+                onTouchEnd={() => {
+                  if (isMagazineCard(card.title)) {
+                    setPausedAutoplayCards((current) => ({ ...current, [cardIndex]: false }));
+                  }
+                }}
               >
-                <div className="grid grid-cols-2 gap-3">
-                  {card.images.map((image, index) => (
-                    <button
-                      type="button"
-                      key={`${card.title}-${index}`}
-                      className={`overflow-hidden rounded-[18px] text-left transition hover:opacity-90 ${index === 0 ? "col-span-2" : ""}`}
-                      onClick={() => openLightbox(cardIndex, index)}
-                      aria-label={`Open ${card.title} image ${index + 1}`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${card.title} image ${index + 1}`}
-                        className={`w-full object-cover ${index === 0 ? "h-64 sm:h-72" : "h-36 sm:h-44"}`}
-                      />
-                    </button>
-                  ))}
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    className="w-full overflow-hidden rounded-[18px] text-left transition hover:opacity-90"
+                    onClick={() => openLightbox(cardIndex, 0)}
+                    aria-label={`Open ${card.title} image 1`}
+                  >
+                    <img
+                      src={card.images[0]}
+                      alt={`${card.title} image 1`}
+                      className="h-64 w-full object-cover sm:h-72"
+                    />
+                  </button>
+
+                  {card.images.length > 1 ? (
+                    <div className="relative overflow-hidden rounded-[18px]">
+                      <button
+                        type="button"
+                        className="w-full overflow-hidden rounded-[18px] text-left transition hover:opacity-90"
+                        onClick={() => openLightbox(cardIndex, getSecondaryImagePosition(cardIndex, card.images.length))}
+                        aria-label={`Open ${card.title} image ${getSecondaryImagePosition(cardIndex, card.images.length) + 1}`}
+                      >
+                        <img
+                          src={card.images[getSecondaryImagePosition(cardIndex, card.images.length)]}
+                          alt={`${card.title} image ${getSecondaryImagePosition(cardIndex, card.images.length) + 1}`}
+                          className="h-44 w-full object-cover sm:h-48"
+                        />
+                      </button>
+
+                      {card.images.length > 2 ? (
+                        <>
+                          <button
+                            type="button"
+                            className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-base text-black transition hover:scale-[1.03]"
+                            onClick={() => shiftSecondaryImage(cardIndex, card.images.length, "previous")}
+                            aria-label={`Previous ${card.title} image`}
+                          >
+                            ←
+                          </button>
+                          <button
+                            type="button"
+                            className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-base text-black transition hover:scale-[1.03]"
+                            onClick={() => shiftSecondaryImage(cardIndex, card.images.length, "next")}
+                            aria-label={`Next ${card.title} image`}
+                          >
+                            →
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {card.images.length > 2 ? (
+                    <div className="flex items-center justify-center gap-2">
+                      {card.images.slice(1).map((_, index) => {
+                        const absoluteImageIndex = index + 1;
+                        const isActive = absoluteImageIndex === getSecondaryImagePosition(cardIndex, card.images.length);
+
+                        return (
+                          <button
+                            type="button"
+                            key={`${card.title}-dot-${absoluteImageIndex}`}
+                            onClick={() => setSecondaryPreviewIndexes((current) => ({ ...current, [cardIndex]: absoluteImageIndex }))}
+                            aria-label={`Show ${card.title} image ${absoluteImageIndex + 1}`}
+                            className={`h-2.5 w-2.5 rounded-full transition ${isActive ? "bg-neutral-900" : "bg-neutral-300 hover:bg-neutral-500"}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="px-1 pb-1 pt-5">
                   <h2 className="text-3xl tracking-[-0.04em] text-neutral-950">{card.title}</h2>
@@ -228,7 +356,7 @@ export default function GalleryPage() {
                   key={`${activeCard.title}-${activeImageIndex}`}
                   src={activeCard.images[activeImageIndex]}
                   alt={`${activeCard.title} image ${activeImageIndex + 1}`}
-                  className="h-[52vh] w-full rounded-[24px] object-cover animate-[fadeIn_0.35s_ease_both] sm:h-[68vh]"
+                  className="h-[52vh] w-full rounded-[24px] bg-[#1a1a1a] object-contain animate-[fadeIn_0.35s_ease_both] sm:h-[68vh]"
                 />
 
                 {activeCard.images.length > 1 ? (

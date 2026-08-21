@@ -172,7 +172,7 @@ export function BookingForm() {
           phone: String(formData.get("phone") ?? "").trim(),
           date: String(formData.get("date") ?? ""),
           time: String(formData.get("time") ?? ""),
-          consultationType: String(formData.get("type") ?? "Private studio fitting"),
+          consultationType: String(formData.get("type") ?? "Online consultation"),
           request: String(formData.get("request") ?? "").trim(),
         } satisfies ConsultationSubmissionInput);
 
@@ -291,11 +291,11 @@ export function BookingForm() {
             <select
               name="type"
               className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition-colors focus:border-black"
-              defaultValue="Private studio fitting"
+              defaultValue="Online consultation"
             >
-              <option>Private studio fitting</option>
+              <option>Online consultation</option>
               <option>Virtual consultation</option>
-              <option>Bridal consultation</option>
+              <option>Tailoring consultation</option>
             </select>
           </label>
         </div>

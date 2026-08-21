@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { useCart } from "@/components/cart-context";
 import { useCustomizationDrawer } from "@/components/customization-drawer-context";
 import type { Product } from "@/data/products";
 
@@ -11,10 +10,9 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart } = useCart();
   const { openDrawer } = useCustomizationDrawer();
   const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
-  const [isOrderAdded, setIsOrderAdded] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedSize, setSelectedSize] = useState("");
   const [sizeError, setSizeError] = useState("");
 
@@ -78,28 +76,58 @@ export function ProductCard({ product }: ProductCardProps) {
             </button>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (!selectedSize) {
-                  setSizeError("Please choose a size before adding to cart.");
+                  setSizeError("Please choose a size before checkout.");
                   return;
                 }
 
-                addToCart({
-                  name: product.name,
-                  code: product.code,
-                  size: selectedSize,
-                });
-                setIsOrderAdded(true);
-                window.setTimeout(() => setIsOrderAdded(false), 1400);
+                setSizeError("");
+                setIsCheckingOut(true);
+
+                try {
+                  const response = await fetch("/api/cart/checkout", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      items: [
+                        {
+                          code: product.code,
+                          name: product.name,
+                          size: selectedSize,
+                          quantity: 1,
+                        },
+                      ],
+                    }),
+                  });
+
+                  const payload = (await response.json()) as {
+                    message?: string;
+                    url?: string;
+                  };
+
+                  if (!response.ok || !payload.url) {
+                    setSizeError(payload.message ?? "Checkout is unavailable right now. Please try again.");
+                    setIsCheckingOut(false);
+                    return;
+                  }
+
+                  window.location.assign(payload.url);
+                } catch {
+                  setSizeError("Checkout is unavailable right now. Please try again.");
+                  setIsCheckingOut(false);
+                }
               }}
-              className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition hover:-translate-y-0.5"
+              disabled={isCheckingOut}
+              className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isOrderAdded ? "Added" : "Order"}
+              {isCheckingOut ? "Redirecting..." : "Checkout"}
             </button>
           </div>
         </div>
       </article>
-
       {isSizeChartOpen && (
         <div className="fixed inset-0 z-50">
           <button

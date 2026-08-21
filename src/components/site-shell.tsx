@@ -19,8 +19,48 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutSubmitting, setIsCheckoutSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [hasAdminAccess, setHasAdminAccess] = useState(pathname.startsWith("/admin"));
+
+  const startCartCheckout = async () => {
+    if (items.length === 0 || isCheckoutSubmitting) {
+      return;
+    }
+
+    setCheckoutError("");
+    setIsCheckoutSubmitting(true);
+
+    try {
+      const response = await fetch("/api/cart/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            code: item.code,
+            name: item.name,
+            size: item.size,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const payload = (await response.json()) as { message?: string; url?: string };
+      if (!response.ok || !payload.url) {
+        setCheckoutError(payload.message ?? "Checkout is unavailable right now. Please try again.");
+        setIsCheckoutSubmitting(false);
+        return;
+      }
+
+      window.location.assign(payload.url);
+    } catch {
+      setCheckoutError("Checkout is unavailable right now. Please try again.");
+      setIsCheckoutSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (!currentUser) {
@@ -438,19 +478,23 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={clearCart}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isCheckoutSubmitting}
                 className="rounded-full border border-black bg-white px-4 py-2.5 text-sm text-black transition disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Clear bag
               </button>
-              <Link
-                href="/consultation"
-                onClick={() => setIsCartOpen(false)}
+              <button
+                type="button"
+                onClick={() => {
+                  void startCartCheckout();
+                }}
+                disabled={items.length === 0 || isCheckoutSubmitting}
                 className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900"
               >
-                Continue to consultation
-              </Link>
+                {isCheckoutSubmitting ? "Redirecting..." : "Checkout"}
+              </button>
             </div>
+            {checkoutError ? <p className="mt-3 text-sm text-red-700">{checkoutError}</p> : null}
           </aside>
         </div>
       )}

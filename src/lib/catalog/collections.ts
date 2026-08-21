@@ -33,7 +33,7 @@ const fallbackCollections: CatalogCollectionConfig[] = [
     eyebrow: "Wedding Dresses",
     title: "A gown with your name in the details.",
     description: "Choose Order, Bespoke Service, or Customize. Additional measurements will be taken during your consultation.",
-    ctaEyebrow: "Book a Bridal Consultation",
+    ctaEyebrow: "Book an Online Consultation",
     ctaTitle: "Start your bridal journey.",
     ctaBody: "A $50 non-refundable fee is required to secure your appointment.",
     sortOrder: 1,

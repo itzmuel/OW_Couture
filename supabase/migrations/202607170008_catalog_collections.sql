@@ -38,7 +38,7 @@ create policy "catalog_collections_public_read"
 
 insert into public.catalog_collections (slug, label, eyebrow, title, description, cta_eyebrow, cta_title, cta_body, sort_order, archived)
 values
-  ('wedding', 'Wedding Dresses', 'Wedding Dresses', 'A gown with your name in the details.', 'Choose Order, Bespoke Service, or Customize. Additional measurements will be taken during your consultation.', 'Book a Bridal Consultation', 'Start your bridal journey.', 'A $50 non-refundable fee is required to secure your appointment.', 1, false),
+  ('wedding', 'Wedding Dresses', 'Wedding Dresses', 'A gown with your name in the details.', 'Choose Order, Bespoke Service, or Customize. Additional measurements will be taken during your consultation.', 'Book an Online Consultation', 'Start your bridal journey.', 'A $50 non-refundable fee is required to secure your appointment.', 1, false),
   ('rtw', 'RTW Collection', 'RTW Collection', 'Ready-to-wear, made slowly.', 'Pre-order refined silhouettes or customize measurements before checkout.', 'Book a Tailoring Consultation', 'Get the fit right.', 'A $50 non-refundable fee is required to secure your appointment.', 2, false),
   ('evening', 'Bridesmaids & Evening', 'Bridesmaids & Evening', 'Elegant pieces for moments that last.', 'Pre-order or customize selected occasionwear. Consultation is recommended for complex bridal-party orders.', 'Book a Consultation', 'Dress your whole party.', 'A $50 non-refundable fee is required to secure your appointment.', 3, false)
 on conflict (slug) do nothing;

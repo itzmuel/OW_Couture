@@ -145,6 +145,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: cleanedEmail,
           password: cleanedPassword,
           options: {
+            emailRedirectTo:
+              typeof window !== "undefined"
+                ? `${window.location.origin}/auth/login?confirmed=1`
+                : process.env.NEXT_PUBLIC_SITE_URL?.trim(),
             data: {
               full_name: cleanedName,
             },
