@@ -123,6 +123,20 @@ export default function Home() {
 
       <section id="collections" className="border-b border-[var(--line)] py-20">
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 rounded-[26px] border border-black bg-black px-5 py-5 text-white sm:px-7 sm:py-6">
+            <p className="text-xs uppercase tracking-[0.16em] text-white/75">Now Open</p>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+              <p className="max-w-3xl text-base leading-7 sm:text-lg">
+                Registration is open for the 8-week Fashion Design Course. Classes start in October 2026 and registration closes September 30, 2026.
+              </p>
+              <Link
+                href="/fashion-course"
+                className="inline-flex rounded-full border border-white bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:-translate-y-0.5"
+              >
+                Learn more
+              </Link>
+            </div>
+          </div>
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Collections</p>
           <h2 className="max-w-4xl text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">
             Couture, quiet luxury, and timeless form.

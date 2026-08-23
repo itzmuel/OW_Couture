@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const consultationSteps = [
-  "Share your event, timing, and preferred silhouette.",
+  "Share your event, timing, and style preferences.",
   "Complete secure Stripe checkout for the consultation deposit.",
   "Receive a follow-up within 24 hours to confirm your fitting details.",
 ];
