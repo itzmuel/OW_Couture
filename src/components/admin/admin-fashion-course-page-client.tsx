@@ -21,6 +21,20 @@ type FashionCourseRegistration = {
   createdAt: string;
 };
 
+type RecoveryMetrics = {
+  recoveryLimiter: {
+    rowCount: number;
+    oldestUpdatedAt: string | null;
+  };
+  maintenanceRun: {
+    lastRunAt: string;
+    lastStatus: "success" | "error";
+    lastDeletedRows: number;
+    lastRetentionDays: number;
+    lastMessage: string;
+  } | null;
+};
+
 function formatCad(cents: number) {
   return new Intl.NumberFormat("en-CA", {
     style: "currency",
@@ -48,6 +62,10 @@ export function AdminFashionCoursePageClient() {
   const [errorMessage, setErrorMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [scoreFilter, setScoreFilter] = useState<"all" | "8plus" | "6to7" | "below6">("all");
+  const [recoveryMetrics, setRecoveryMetrics] = useState<RecoveryMetrics | null>(null);
+  const [metricsError, setMetricsError] = useState("");
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadRegistrations = async () => {
     setIsLoading(true);
@@ -112,11 +130,44 @@ export function AdminFashionCoursePageClient() {
     setIsLoading(false);
   };
 
+  const loadRecoveryMetrics = async () => {
+    setMetricsError("");
+
+    const response = await fetch("/api/admin/recovery-metrics", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const payload = (await response.json()) as {
+      message?: string;
+      recoveryLimiter?: RecoveryMetrics["recoveryLimiter"];
+      maintenanceRun?: RecoveryMetrics["maintenanceRun"];
+    };
+
+    if (!response.ok || !payload.recoveryLimiter) {
+      setRecoveryMetrics(null);
+      setMetricsError(payload.message ?? "Unable to load recovery diagnostics.");
+      return;
+    }
+
+    setRecoveryMetrics({
+      recoveryLimiter: payload.recoveryLimiter,
+      maintenanceRun: payload.maintenanceRun ?? null,
+    });
+  };
+
+  const refreshAll = async () => {
+    setIsRefreshing(true);
+    await Promise.all([loadRegistrations(), loadRecoveryMetrics()]);
+    setLastRefreshedAt(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
   useEffect(() => {
-    void loadRegistrations();
+    void refreshAll();
 
     const interval = window.setInterval(() => {
-      void loadRegistrations();
+      void refreshAll();
     }, 15000);
 
     return () => {
@@ -174,6 +225,54 @@ export function AdminFashionCoursePageClient() {
             </p>
           </div>
         </div>
+
+        <section className="mt-6 rounded-[24px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Recovery Diagnostics</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                {lastRefreshedAt ? `Last refreshed ${formatDate(lastRefreshedAt)}` : "Refreshing automatically every 15 seconds."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void refreshAll()}
+              disabled={isRefreshing}
+              className="rounded-full border border-black px-4 py-2 text-xs uppercase tracking-[0.14em] text-neutral-900 transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isRefreshing ? "Refreshing..." : "Refresh Now"}
+            </button>
+          </div>
+          {metricsError ? (
+            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{metricsError}</p>
+          ) : recoveryMetrics ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Limiter rows</p>
+                <p className="mt-2 text-2xl tracking-[-0.03em] text-neutral-950">{recoveryMetrics.recoveryLimiter.rowCount}</p>
+              </div>
+              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Oldest activity</p>
+                <p className="mt-2 text-sm text-neutral-900">
+                  {recoveryMetrics.recoveryLimiter.oldestUpdatedAt ? formatDate(recoveryMetrics.recoveryLimiter.oldestUpdatedAt) : "None"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Last cleanup</p>
+                <p className="mt-2 text-sm text-neutral-900">
+                  {recoveryMetrics.maintenanceRun ? `${formatDate(recoveryMetrics.maintenanceRun.lastRunAt)} · ${recoveryMetrics.maintenanceRun.lastStatus}` : "Not run yet"}
+                </p>
+                {recoveryMetrics.maintenanceRun ? (
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    Deleted {recoveryMetrics.maintenanceRun.lastDeletedRows} rows, retention {recoveryMetrics.maintenanceRun.lastRetentionDays} days.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-[var(--muted)]">Loading recovery diagnostics...</p>
+          )}
+        </section>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-[24px] border border-[var(--line)] bg-white p-4">

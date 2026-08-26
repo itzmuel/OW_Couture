@@ -148,7 +148,7 @@ export async function POST(request: Request) {
         expectedTotalCents: String(totalAmountCents),
       },
       line_items: lineItems,
-      success_url: `${baseUrl}/fashion-course?course_payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/fashion-course/assessment?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/fashion-course?course_payment=cancelled&registration_id=${registration.id}`,
     });
 

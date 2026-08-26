@@ -69,6 +69,25 @@ async function cleanupRecoveryRateLimits(retentionDays: number) {
   return { deleted: identifiers.length };
 }
 
+async function recordMaintenanceRun(details: {
+  status: "success" | "error";
+  retentionDays: number;
+  deletedRows: number;
+  message: string;
+}) {
+  const adminClient = createSupabaseAdminClient();
+
+  await adminClient.from("fashion_course_recovery_maintenance_runs").upsert({
+    job_name: "recovery-rate-limits-cleanup",
+    last_run_at: new Date().toISOString(),
+    last_status: details.status,
+    last_deleted_rows: details.deletedRows,
+    last_retention_days: details.retentionDays,
+    last_message: details.message,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
@@ -78,6 +97,13 @@ export async function GET(request: Request) {
     const retentionDays = parseRetentionDays(request);
     const result = await cleanupRecoveryRateLimits(retentionDays);
 
+    await recordMaintenanceRun({
+      status: "success",
+      retentionDays,
+      deletedRows: result.deleted,
+      message: "Recovery rate-limit cleanup complete.",
+    });
+
     return NextResponse.json({
       ok: true,
       retentionDays,
@@ -86,6 +112,18 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Cleanup failed.";
+
+    try {
+      await recordMaintenanceRun({
+        status: "error",
+        retentionDays: parseRetentionDays(request),
+        deletedRows: 0,
+        message,
+      });
+    } catch {
+      // Ignore logging failures so the primary maintenance response still returns.
+    }
+
     return NextResponse.json({ ok: false, message }, { status: 500 });
   }
 }
