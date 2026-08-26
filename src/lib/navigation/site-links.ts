@@ -117,5 +117,5 @@ export const footerContent: FooterContent = {
   studioDescription:
     "Refined bridal, ready-to-wear, bridesmaids, and evening pieces created through a personal made-to-order process.",
   digitalTitle: "Digital touchpoints",
-  digitalTouchpoints: ["hello@owcouture.ca", "info@owcouture.ca", "@OWCouture"],
+  digitalTouchpoints: ["hello@owcouture.ca", "@OWCouture"],
 };

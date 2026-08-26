@@ -212,7 +212,7 @@ export default function GalleryPage() {
       <main className="border-b border-[var(--line)] py-16 sm:py-20">
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Gallery</p>
-          <h1 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">Lookbook stories in image sets.</h1>
+          <h1 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">Gallery stories in image sets.</h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--muted)] sm:text-lg">
             Each card can hold multiple images, making it easy to group moments from the same fitting, event, or collection launch.
           </p>

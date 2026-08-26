@@ -164,9 +164,8 @@ export default function Home() {
 
       <section id="gallery" className="border-b border-[var(--line)] py-20">
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Lookbook</p>
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">Gallery of custom work.</h2>
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Gallery</p>
+          <div className="flex justify-end">
             <Link
               href="/gallery"
               className="rounded-full border border-black bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5"
@@ -222,20 +221,8 @@ export default function Home() {
       </section>
 
       <section id="contact" className="py-20">
-        <div className="mx-auto grid w-full max-w-[1180px] gap-9 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <div data-scroll-reveal data-scroll-direction="left">
-            <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Digital Touchpoints</p>
-            <h2 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">{homepageContent.contactTitle}</h2>
-            <p className="mt-4 text-base leading-8 text-neutral-800">
-              {homepageContent.contactBody.split("\n").map((line, index) => (
-                <span key={`${line}-${index}`}>
-                  {line}
-                  {index < homepageContent.contactBody.split("\n").length - 1 ? <br /> : null}
-                </span>
-              ))}
-            </p>
-          </div>
-          <div data-scroll-reveal data-scroll-direction="right" className="rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-7">
+        <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
+          <div data-scroll-reveal data-scroll-direction="right" className="mx-auto w-full max-w-[620px] rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-7">
             <h3 className="text-3xl tracking-[-0.04em] text-neutral-950">Order Tracking Portal</h3>
             <div className="mt-5 grid gap-4">
               <label className="grid gap-2 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
