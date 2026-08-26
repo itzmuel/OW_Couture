@@ -10,6 +10,12 @@ type SectionContent = {
 };
 
 const sectionContent: Record<Exclude<AdminSectionSlug, "consultations">, SectionContent> = {
+  "fashion-course": {
+    title: "Fashion Course",
+    description: "Review course registrations, assessment scores, and shortlist applicants for upcoming cohorts.",
+    modules: ["Applicant list", "Assessment score filters", "Contact details", "Cohort readiness", "Selection notes"],
+    primaryActionLabel: "Review applicants",
+  },
   orders: {
     title: "Orders",
     description: "Track approval, payment, production stage, shipping, and delivery for every made-to-order purchase.",

@@ -9,6 +9,7 @@ import type { AdminPermission } from "@/lib/admin/team";
 
 export const adminNavItems: AdminNavItem[] = [
   { label: "Dashboard", href: "/admin", description: "Business command center", section: "dashboard" },
+  { label: "Fashion Course", href: "/admin/fashion-course", description: "Applicants and assessment scores", section: "fashion-course" },
   { label: "Orders", href: "/admin/orders", description: "Order intake and fulfillment", section: "orders" },
   { label: "Production", href: "/admin/production", description: "Made-to-order stage tracker", section: "production" },
   { label: "Products", href: "/admin/products", description: "Catalog, media, and SEO", section: "products" },
@@ -29,6 +30,7 @@ export const adminNavItems: AdminNavItem[] = [
 ];
 
 export const adminSections = [
+  "fashion-course",
   "orders",
   "production",
   "products",
@@ -52,6 +54,7 @@ export type AdminSectionSlug = (typeof adminSections)[number];
 
 export const adminSectionPermissions: Record<"dashboard" | AdminSectionSlug, AdminPermission> = {
   dashboard: "dashboard:view",
+  "fashion-course": "consultations:view",
   orders: "orders:view",
   production: "production:view",
   products: "products:view",

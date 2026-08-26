@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminAnalyticsPageClient } from "@/components/admin/admin-analytics-page-client";
 import { AdminCollectionsPageClient } from "@/components/admin/admin-collections-page-client";
 import { AdminCustomersPageClient } from "@/components/admin/admin-customers-page-client";
+import { AdminFashionCoursePageClient } from "@/components/admin/admin-fashion-course-page-client";
 import { AdminMeasurementsPageClient } from "@/components/admin/admin-measurements-page-client";
 import { AdminOrdersPageClient } from "@/components/admin/admin-orders-page-client";
 import { AdminOperationsPageClient } from "@/components/admin/admin-operations-page-client";
@@ -34,6 +35,10 @@ export default async function AdminSectionRoute({
 
   if (section === "consultations") {
     return <AdminPageClient />;
+  }
+
+  if (section === "fashion-course") {
+    return <AdminFashionCoursePageClient />;
   }
 
   if (section === "orders") {

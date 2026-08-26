@@ -43,3 +43,16 @@ This workspace is initialized as a Next.js App Router project with TypeScript an
 	- `stripe_payment_status`
 	- `consultation_fee_amount_cents`
 	- `paid_at`
+
+## Fashion Course Recovery Maintenance
+
+1. Automated cleanup of recovery rate-limit rows runs daily via Vercel Cron:
+	- `GET /api/internal/maintenance/recovery-rate-limits`
+	- schedule in `vercel.json`: `0 3 * * *`
+2. Protect this endpoint by setting one of these environment variables in Vercel:
+	- `CRON_SECRET` (recommended)
+	- `MAINTENANCE_CRON_SECRET` (fallback)
+3. Manual invocation example with auth:
+	- `curl -H "Authorization: Bearer <secret>" https://your-domain.com/api/internal/maintenance/recovery-rate-limits`
+4. Optional retention override (allowed range 7-180 days):
+	- `?retentionDays=45`
