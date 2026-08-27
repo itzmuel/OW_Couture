@@ -66,6 +66,30 @@ export function AdminFashionCoursePageClient() {
   const [metricsError, setMetricsError] = useState("");
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [resettingRegistrationId, setResettingRegistrationId] = useState("");
+
+  const buildRetestEmail = (registration: FashionCourseRegistration) => {
+    const subject = "OW Couture Academy Retest Instructions";
+    const cohortText = registration.cohortLabel || "Current cohort";
+    const deadlineText = formatDate(registration.registrationDeadline);
+    const body = [
+      `Hi ${registration.fullName},`,
+      "",
+      "You have been approved to retake the OW Couture Academy basic skills assessment.",
+      `Cohort: ${cohortText}`,
+      `Assessment deadline: ${deadlineText}`,
+      "",
+      "Please use this link to access your assessment:",
+      "https://owcouture.ca/fashion-course/assessment",
+      "",
+      "Welcome to the Ow Couture Academy.",
+      "",
+      "Best regards,",
+      "OW Couture Academy Team",
+    ].join("\n");
+
+    return `mailto:${encodeURIComponent(registration.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
 
   const loadRegistrations = async () => {
     setIsLoading(true);
@@ -161,6 +185,45 @@ export function AdminFashionCoursePageClient() {
     await Promise.all([loadRegistrations(), loadRecoveryMetrics()]);
     setLastRefreshedAt(new Date().toISOString());
     setIsRefreshing(false);
+  };
+
+  const makeRetest = async (registration: FashionCourseRegistration) => {
+    const confirmed = window.confirm(`Reset assessment for ${registration.fullName}? This will let them retake the test.`);
+    if (!confirmed) {
+      return false;
+    }
+
+    setResettingRegistrationId(registration.id);
+
+    const response = await fetch("/api/admin/fashion-course", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: registration.id }),
+    });
+
+    const payload = (await response.json()) as { message?: string };
+    if (!response.ok) {
+      setErrorMessage(payload.message ?? "Unable to reset assessment.");
+      setResettingRegistrationId("");
+      return false;
+    }
+
+    await refreshAll();
+    setResettingRegistrationId("");
+    return true;
+  };
+
+  const makeRetestAndEmail = async (registration: FashionCourseRegistration) => {
+    const resetSucceeded = await makeRetest(registration);
+
+    if (!resetSucceeded) {
+      return;
+    }
+
+    // Open the local mail client with a prefilled draft after reset.
+    window.open(buildRetestEmail(registration), "_blank", "noopener,noreferrer");
   };
 
   useEffect(() => {
@@ -354,6 +417,29 @@ export function AdminFashionCoursePageClient() {
                       <p><b>Submitted:</b> {formatDate(registration.createdAt)}</p>
                       <p><b>Materials Pack:</b> {registration.wantsMaterialsKit ? "Yes" : "No"}</p>
                       <p><b>Paid:</b> {formatCad(registration.paymentAmountCents)}</p>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void makeRetest(registration);
+                        }}
+                        disabled={resettingRegistrationId === registration.id}
+                        className="rounded-full border border-black px-4 py-2 text-xs uppercase tracking-[0.12em] text-neutral-900 transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {resettingRegistrationId === registration.id ? "Resetting..." : "Make retest"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void makeRetestAndEmail(registration);
+                        }}
+                        disabled={resettingRegistrationId === registration.id}
+                        className="rounded-full border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.12em] text-white transition-colors hover:bg-neutral-900 disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300"
+                      >
+                        {resettingRegistrationId === registration.id ? "Resetting..." : "Make retest and email"}
+                      </button>
                     </div>
 
                     <p className="mt-3 text-sm leading-7 text-neutral-700">{registration.interestReason}</p>
