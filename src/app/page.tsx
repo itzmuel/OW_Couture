@@ -43,8 +43,6 @@ const instagramImages = [
   "https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=900&q=80",
 ];
 
-const instagramProfileUrl = "https://www.instagram.com/owcouture/";
-
 export default function Home() {
   const [heroOffset, setHeroOffset] = useState(0);
   const [homepageContent, setHomepageContent] = useState<HomepageContent>(defaultHomepageContent);
@@ -247,38 +245,14 @@ export default function Home() {
             </p>
           </div>
           <div data-scroll-reveal data-scroll-direction="right" className="rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-7">
-            <a
-              href={instagramProfileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs uppercase tracking-[0.16em] text-[var(--muted)] transition hover:text-neutral-950"
-            >
-              Instagram
-            </a>
+            <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Instagram</p>
             <div className="mt-5 grid gap-3 grid-cols-2 sm:grid-cols-3">
               {instagramImages.map((image, index) => (
-                <a
-                  key={image}
-                  href={instagramProfileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  data-scroll-reveal
-                  data-scroll-delay={80 + index * 55}
-                  className="overflow-hidden rounded-[20px]"
-                  aria-label={`Open OW Couture Instagram for look ${index + 1}`}
-                >
+                <div key={image} data-scroll-reveal data-scroll-delay={80 + index * 55} className="overflow-hidden rounded-[20px]">
                   <img src={image} alt={`Instagram look ${index + 1}`} className="h-36 w-full object-cover transition duration-300 hover:scale-[1.03]" />
-                </a>
+                </div>
               ))}
             </div>
-            <a
-              href={instagramProfileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex text-sm font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 transition hover:decoration-neutral-950"
-            >
-              View on Instagram
-            </a>
           </div>
         </div>
       </section>
