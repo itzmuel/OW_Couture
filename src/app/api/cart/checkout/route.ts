@@ -75,6 +75,7 @@ export async function POST(request: Request) {
       name: item.name?.trim() ?? "OW Couture Piece",
       size: item.size?.trim() ?? "Unspecified",
       quantity: Math.max(1, Math.min(10, Math.floor(item.quantity ?? 1))),
+      weightKg: typeof item.weightKg === "number" && Number.isFinite(item.weightKg) && item.weightKg > 0 ? item.weightKg : undefined,
     }))
     .filter((item) => item.code.length > 0);
 
