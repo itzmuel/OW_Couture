@@ -19,7 +19,7 @@ export default async function WeddingCollectionPage() {
       <section className="border-b border-[var(--line)] py-20">
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
           <Link
-            href="/#wedding"
+            href="/collection"
             className="mb-8 inline-flex items-center gap-2 text-sm text-[var(--muted)] transition hover:text-neutral-950"
           >
             ← Collections

@@ -26,7 +26,7 @@ export type FooterContent = {
 
 const homeNav: NavItem[] = [
   { href: "/#home", label: "Home", match: (pathname) => pathname === "/" },
-  { href: "/#collections", label: "Collections", match: () => false },
+  { href: "/collection", label: "Collections", match: (pathname) => pathname === "/collection" },
   { href: "/fashion-course", label: "Fashion Course", match: (pathname) => pathname.startsWith("/fashion-course") },
   { href: "/gallery", label: "Gallery", match: (pathname) => pathname.startsWith("/gallery") },
   { href: "/consultation", label: "Book Consultation", match: (pathname) => pathname === "/consultation" },
@@ -91,6 +91,7 @@ export function getNavigation(pathname: string): NavItem[] {
 
 export const searchablePages: SearchPageLink[] = [
   { label: "Home", href: "/" },
+  { label: "Collections", href: "/collection" },
   { label: "Fashion Course", href: "/fashion-course" },
   { label: "Gallery", href: "/gallery" },
   { label: "Wedding Collection", href: "/collections/wedding" },
