@@ -15,6 +15,7 @@ export type Product = {
   madeFor: string[];
   highlights: string[];
   featured?: boolean;
+  weightKg?: number;
 };
 
 export const products: Product[] = [
@@ -36,6 +37,7 @@ export const products: Product[] = [
     madeFor: ["Evening events", "Editorial styling", "Custom color adaptations"],
     highlights: ["Contoured waist seam", "Soft drape trouser", "Optional detachable sleeve"],
     featured: true,
+    weightKg: 2.2,
   },
   {
     slug: "pearl-column-gown",
@@ -55,6 +57,7 @@ export const products: Product[] = [
     madeFor: ["Civil ceremonies", "Reception look", "Bridal capsule styling"],
     highlights: ["Pearl back detail", "Internal corsetry", "Custom train options"],
     featured: true,
+    weightKg: 3.1,
   },
   {
     slug: "midnight-tux-dress",
@@ -74,6 +77,7 @@ export const products: Product[] = [
     madeFor: ["Black-tie dressing", "Press events", "Personal wardrobe commissions"],
     highlights: ["Peak lapel neckline", "Wrapped skirt front", "Internal waist stay"],
     featured: true,
+    weightKg: 2.6,
   },
   {
     slug: "soft-rose-corset",
@@ -92,6 +96,7 @@ export const products: Product[] = [
     materials: ["Silk faille", "Boning channels", "Soft cotton lining"],
     madeFor: ["Occasion separates", "Layered styling", "Wardrobe updates"],
     highlights: ["Hidden structure", "Adjustable lace back", "Optional matching skirt"],
+    weightKg: 1.4,
   },
   {
     slug: "atelier-trouser-suit",
@@ -110,6 +115,7 @@ export const products: Product[] = [
     materials: ["Italian suiting wool", "Cupro lining", "Horn-effect buttons"],
     madeFor: ["Modern bridal", "Wardrobe foundations", "Power dressing"],
     highlights: ["Extended jacket line", "Single-pleat trouser", "Multiple fit passes"],
+    weightKg: 2.8,
   },
   {
     slug: "silk-veil-cape",
@@ -128,6 +134,7 @@ export const products: Product[] = [
     materials: ["Silk tulle", "Rolled edges", "Discrete fastening"],
     madeFor: ["Ceremony styling", "Layered bridal looks", "Editorial bridal shoots"],
     highlights: ["Air-light finish", "Optional pearl trim", "Pairs with custom gowns"],
+    weightKg: 0.6,
   },
 ];
 

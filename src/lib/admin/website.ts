@@ -9,6 +9,19 @@ export type HomepageContent = {
   contactBody: string;
 };
 
+export type ShippingPlanRow = {
+  country: string;
+  province: string;
+  region: string;
+  twoKg: string;
+  additionalOneKg: string;
+  timeline: string;
+};
+
+export type ShippingPlanContent = {
+  rows: ShippingPlanRow[];
+};
+
 export const defaultHomepageContent: HomepageContent = {
   heroTitle: "OW Couture.",
   heroSubtitle: "Made to order. Made for you.",
@@ -20,6 +33,43 @@ export const defaultHomepageContent: HomepageContent = {
   contactTitle: "Contact",
   contactBody: "Email: hello@owcouture.ca\nInstagram: @OWCouture",
 };
+
+export const defaultShippingPlanContent: ShippingPlanContent = {
+  rows: [
+    { country: "USA", province: "", region: "", twoKg: "59", additionalOneKg: "5.25", timeline: "4-6 days" },
+    { country: "Canada", province: "Alberta", region: "", twoKg: "35", additionalOneKg: "2.61", timeline: "up to 7 days" },
+    { country: "Canada", province: "British Columbia", region: "", twoKg: "31", additionalOneKg: "1.93", timeline: "up to 7 days" },
+    { country: "Canada", province: "Manitoba", region: "", twoKg: "30", additionalOneKg: "1.43", timeline: "up to 5 days" },
+    { country: "Canada", province: "New Brunswick", region: "", twoKg: "33", additionalOneKg: "1.71", timeline: "up to 5 days" },
+    { country: "Canada", province: "Newfoundland and Labrador", region: "", twoKg: "34", additionalOneKg: "3.25", timeline: "up to 7 days" },
+    { country: "Canada", province: "Nova Scotia", region: "", twoKg: "30", additionalOneKg: "1.79", timeline: "up to 5 days" },
+    { country: "Canada", province: "Prince Edward Island", region: "", twoKg: "34", additionalOneKg: "2.11", timeline: "up to 5 days" },
+    { country: "Canada", province: "Quebec", region: "", twoKg: "22", additionalOneKg: "1.75", timeline: "up to 3 days" },
+    { country: "Canada", province: "Saskatchewan", region: "", twoKg: "28", additionalOneKg: "1.5", timeline: "up to 5 days" },
+    { country: "Canada", province: "Ontario", region: "GTA", twoKg: "21", additionalOneKg: "1.04", timeline: "up to 2 days" },
+    { country: "Canada", province: "Ontario", region: "Northern Ontario", twoKg: "27", additionalOneKg: "1.08", timeline: "up to 2 days" },
+    { country: "Canada", province: "Ontario", region: "Southern Ontario", twoKg: "25", additionalOneKg: "1.15", timeline: "up to 2 days" },
+  ],
+};
+
+function normalizeShippingPlanRow(input: Partial<ShippingPlanRow> | null | undefined): ShippingPlanRow {
+  return {
+    country: input?.country?.trim() || "",
+    province: input?.province?.trim() || "",
+    region: input?.region?.trim() || "",
+    twoKg: input?.twoKg?.trim() || "",
+    additionalOneKg: input?.additionalOneKg?.trim() || "",
+    timeline: input?.timeline?.trim() || "",
+  };
+}
+
+export function normalizeShippingPlanContent(input: Partial<ShippingPlanContent> | null | undefined): ShippingPlanContent {
+  const rows = Array.isArray(input?.rows) ? input.rows : defaultShippingPlanContent.rows;
+
+  return {
+    rows: rows.map((row) => normalizeShippingPlanRow(row)),
+  };
+}
 
 export function normalizeHomepageContent(input: Partial<HomepageContent> | null | undefined): HomepageContent {
   return {

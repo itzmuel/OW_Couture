@@ -16,4 +16,5 @@ export type AdminProduct = {
   highlights: string[];
   featured: boolean;
   archived: boolean;
+  weightKg: number;
 };

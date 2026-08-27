@@ -9,6 +9,7 @@ export type CartItem = {
   size: string;
   quantity: number;
   unitPriceCents: number;
+  weightKg: number;
 };
 
 type AddToCartInput = {
@@ -17,6 +18,7 @@ type AddToCartInput = {
   size?: string;
   quantity?: number;
   unitPriceCents?: number;
+  weightKg?: number;
 };
 
 type CartContextValue = {
@@ -42,6 +44,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const code = input.code?.trim() || "OW-CUSTOM";
         const size = input.size?.trim() || "Unspecified";
         const unitPriceCents = Math.max(0, Math.floor(input.unitPriceCents ?? 0));
+        const weightKg = typeof input.weightKg === "number" && Number.isFinite(input.weightKg) && input.weightKg > 0 ? input.weightKg : 1;
 
         setItems((previous) => {
           const existingIndex = previous.findIndex((item) => item.code === code && item.size === size);
@@ -56,6 +59,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 size,
                 quantity: nextQuantity,
                 unitPriceCents,
+                weightKg,
               },
             ];
           }
@@ -66,6 +70,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   ...item,
                   quantity: item.quantity + nextQuantity,
                   unitPriceCents: unitPriceCents || item.unitPriceCents,
+                  weightKg: weightKg || item.weightKg,
                 }
               : item,
           );

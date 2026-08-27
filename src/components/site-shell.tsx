@@ -9,8 +9,10 @@ import { BrandLogo } from "@/components/brand-logo";
 import { CartBubble } from "@/components/cart-bubble";
 import { useCart } from "@/components/cart-context";
 import { products as staticProducts } from "@/data/products";
+import { defaultShippingPlanContent, type ShippingPlanContent } from "@/lib/admin/website";
 import { filterAdminLinks } from "@/lib/navigation/link-visibility";
 import { footerContent, getNavigation, searchablePages, wishlistLinks } from "@/lib/navigation/site-links";
+import { estimateShippingCostCents, type ShippingLocation } from "@/lib/shipping";
 
 const estimatedTaxRate = 0.13;
 
@@ -42,6 +44,14 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const [checkoutError, setCheckoutError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [hasAdminAccess, setHasAdminAccess] = useState(pathname.startsWith("/admin"));
+  const [shippingPlan, setShippingPlan] = useState<ShippingPlanContent>(defaultShippingPlanContent);
+  const [deliveryLocation, setDeliveryLocation] = useState<ShippingLocation>({
+    country: "Canada",
+    province: "Ontario",
+    region: "",
+    address: "",
+    postalCode: "",
+  });
 
   const priceByCode = useMemo(() => {
     return new Map(staticProducts.map((product) => [product.code, parsePriceToCents(product.priceFrom)]));
@@ -55,7 +65,37 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }, [items, priceByCode]);
 
   const estimatedTaxCents = Math.round(subtotalCents * estimatedTaxRate);
-  const estimatedTotalCents = subtotalCents + estimatedTaxCents;
+  const totalWeightKg = useMemo(() => {
+    return items.reduce((total, item) => total + Math.max(0, item.weightKg) * item.quantity, 0);
+  }, [items]);
+  const shippingCostCents = useMemo(() => {
+    return estimateShippingCostCents(totalWeightKg, deliveryLocation, shippingPlan);
+  }, [deliveryLocation, shippingPlan, totalWeightKg]);
+  const estimatedTotalCents = subtotalCents + estimatedTaxCents + (shippingCostCents ?? 0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadShippingPlan = async () => {
+      const response = await fetch("/api/site-content", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const payload = (await response.json()) as { shippingPlan?: ShippingPlanContent };
+      if (!isMounted || !payload.shippingPlan) {
+        return;
+      }
+
+      setShippingPlan(payload.shippingPlan);
+    };
+
+    void loadShippingPlan();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const startCartCheckout = async () => {
     if (items.length === 0 || isCheckoutSubmitting) {
@@ -77,7 +117,11 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             name: item.name,
             size: item.size,
             quantity: item.quantity,
+            weightKg: item.weightKg,
           })),
+          deliveryLocation,
+          shippingCostCents,
+          totalWeightKg,
         }),
       });
 
@@ -94,6 +138,12 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       setIsCheckoutSubmitting(false);
     }
   };
+
+  const missingShippingLocation =
+    !deliveryLocation.address.trim() ||
+    !deliveryLocation.postalCode.trim() ||
+    !deliveryLocation.country.trim() ||
+    !deliveryLocation.province.trim();
 
   useEffect(() => {
     if (!currentUser) {
@@ -524,7 +574,66 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="mt-2 flex items-center justify-between gap-3 text-neutral-700">
                 <span>Shipping</span>
-                <span>Calculated at checkout</span>
+                <span>{shippingCostCents === null ? "Select delivery location" : formatCad(shippingCostCents)}</span>
+              </div>
+              <div className="mt-3 rounded-2xl border border-[var(--line)] bg-white p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Delivery location</p>
+                <div className="mt-3 grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-2 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                      Country
+                      <select
+                        value={deliveryLocation.country}
+                        onChange={(event) => setDeliveryLocation((current) => ({ ...current, country: event.target.value }))}
+                        className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none focus:border-black"
+                      >
+                        <option value="Canada">Canada</option>
+                        <option value="USA">USA</option>
+                      </select>
+                    </label>
+                    <label className="grid gap-2 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                      Province / State
+                      <input
+                        value={deliveryLocation.province}
+                        onChange={(event) => setDeliveryLocation((current) => ({ ...current, province: event.target.value }))}
+                        className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none focus:border-black"
+                        placeholder="Ontario"
+                      />
+                    </label>
+                  </div>
+                  <label className="grid gap-2 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Region
+                    <input
+                      value={deliveryLocation.region}
+                      onChange={(event) => setDeliveryLocation((current) => ({ ...current, region: event.target.value }))}
+                      className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none focus:border-black"
+                      placeholder="GTA, Northern Ontario, etc."
+                    />
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-2 text-xs uppercase tracking-[0.08em] text-[var(--muted)] sm:col-span-2">
+                      Street address
+                      <input
+                        value={deliveryLocation.address}
+                        onChange={(event) => setDeliveryLocation((current) => ({ ...current, address: event.target.value }))}
+                        className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none focus:border-black"
+                        placeholder="Street address"
+                      />
+                    </label>
+                    <label className="grid gap-2 text-xs uppercase tracking-[0.08em] text-[var(--muted)] sm:col-span-2">
+                      Postal code
+                      <input
+                        value={deliveryLocation.postalCode}
+                        onChange={(event) => setDeliveryLocation((current) => ({ ...current, postalCode: event.target.value }))}
+                        className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-neutral-900 outline-none focus:border-black"
+                        placeholder="M5V 2T6"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-[var(--muted)]">
+                    Shipping is calculated from your location and the total cart weight of {totalWeightKg.toFixed(1)} kg.
+                  </p>
+                </div>
               </div>
               <div className="mt-3 border-t border-[var(--line)] pt-3">
                 <div className="flex items-center justify-between gap-3 text-base font-semibold text-neutral-950">
@@ -548,7 +657,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
                   onClick={() => {
                     void startCartCheckout();
                   }}
-                  disabled={items.length === 0 || isCheckoutSubmitting}
+                  disabled={items.length === 0 || isCheckoutSubmitting || missingShippingLocation || shippingCostCents === null}
                   className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isCheckoutSubmitting ? "Redirecting..." : "Checkout"}
@@ -564,6 +673,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             {checkoutError ? <p className="mt-3 text-sm text-red-700">{checkoutError}</p> : null}
+            {missingShippingLocation ? <p className="mt-2 text-sm text-amber-700">Enter a delivery address to calculate shipping and continue.</p> : null}
+            {shippingCostCents === null && !missingShippingLocation ? <p className="mt-2 text-sm text-amber-700">No shipping rate matched that location.</p> : null}
           </aside>
         </div>
       )}

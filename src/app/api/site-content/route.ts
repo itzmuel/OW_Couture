@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { defaultHomepageContent, normalizeHomepageContent } from "@/lib/admin/website";
+import { defaultHomepageContent, defaultShippingPlanContent, normalizeHomepageContent, normalizeShippingPlanContent } from "@/lib/admin/website";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function GET() {
@@ -9,14 +9,23 @@ export async function GET() {
   try {
     adminClient = createSupabaseAdminClient();
   } catch {
-    return NextResponse.json({ homepage: defaultHomepageContent }, { status: 200 });
+    return NextResponse.json({ homepage: defaultHomepageContent, shippingPlan: defaultShippingPlanContent }, { status: 200 });
   }
 
-  const { data, error } = await adminClient.from("site_content").select("content").eq("key", "homepage").maybeSingle();
+  const [homepageResult, shippingPlanResult] = await Promise.all([
+    adminClient.from("site_content").select("content").eq("key", "homepage").maybeSingle(),
+    adminClient.from("site_content").select("content").eq("key", "shipping").maybeSingle(),
+  ]);
 
-  if (error) {
-    return NextResponse.json({ homepage: defaultHomepageContent }, { status: 200 });
+  const { data: homepageData, error: homepageError } = homepageResult;
+  const { data: shippingPlanData, error: shippingPlanError } = shippingPlanResult;
+
+  if (homepageError || shippingPlanError) {
+    return NextResponse.json({ homepage: defaultHomepageContent, shippingPlan: defaultShippingPlanContent }, { status: 200 });
   }
 
-  return NextResponse.json({ homepage: normalizeHomepageContent((data?.content ?? {}) as Partial<typeof defaultHomepageContent>) });
+  return NextResponse.json({
+    homepage: normalizeHomepageContent((homepageData?.content ?? {}) as Partial<typeof defaultHomepageContent>),
+    shippingPlan: normalizeShippingPlanContent((shippingPlanData?.content ?? {}) as Partial<typeof defaultShippingPlanContent>),
+  });
 }

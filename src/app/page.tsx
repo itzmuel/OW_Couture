@@ -46,6 +46,7 @@ const instagramImages = [
 export default function Home() {
   const [heroOffset, setHeroOffset] = useState(0);
   const [homepageContent, setHomepageContent] = useState<HomepageContent>(defaultHomepageContent);
+  const [showBookmarkPrompt, setShowBookmarkPrompt] = useState(false);
 
   useEffect(() => {
     let ticking = false;
@@ -96,8 +97,51 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const dismissed = window.localStorage.getItem("ow-bookmark-prompt-dismissed");
+    if (!dismissed) {
+      setShowBookmarkPrompt(true);
+    }
+  }, []);
+
   return (
     <main>
+      {showBookmarkPrompt ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 px-4 pb-4 pt-20 sm:items-center">
+          <div className="w-full max-w-lg rounded-[28px] border border-[var(--line)] bg-white p-6 shadow-[0_30px_90px_rgba(0,0,0,0.25)] sm:p-8">
+            <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Bookmark OW Couture</p>
+            <h2 className="mt-3 text-[clamp(28px,4vw,42px)] leading-[1.02] tracking-[-0.045em] text-neutral-950">
+              Save us so you can come back to your personalized shopping experience.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-neutral-700">
+              Bookmark this site now so you can easily return to your made-to-order pieces, gallery, and private consultation flow.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  window.localStorage.setItem("ow-bookmark-prompt-dismissed", "1");
+                  setShowBookmarkPrompt(false);
+                }}
+                className="rounded-full border border-black bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-900"
+              >
+                Got it
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.localStorage.setItem("ow-bookmark-prompt-dismissed", "1");
+                  setShowBookmarkPrompt(false);
+                }}
+                className="rounded-full border border-[var(--line)] bg-white px-5 py-3 text-sm font-medium text-neutral-900 transition hover:border-black"
+              >
+                Don’t show again
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <header
         id="home"
         className="relative min-h-[82vh] overflow-hidden text-white"
@@ -165,6 +209,9 @@ export default function Home() {
       <section id="gallery" className="border-b border-[var(--line)] py-20">
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Gallery</p>
+          <h2 className="text-[clamp(30px,4vw,52px)] font-black leading-[1.02] tracking-[-0.045em] text-neutral-950">
+            Signature pieces, captured in detail.
+          </h2>
           <div className="flex justify-end">
             <Link
               href="/gallery"

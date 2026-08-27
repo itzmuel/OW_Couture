@@ -23,6 +23,7 @@ type ProductRow = {
   highlights: string[];
   featured: boolean;
   archived: boolean;
+  weight_kg: number | null;
 };
 
 function toAdminProduct(row: ProductRow): AdminProduct {
@@ -44,6 +45,7 @@ function toAdminProduct(row: ProductRow): AdminProduct {
     highlights: row.highlights ?? [],
     featured: row.featured,
     archived: row.archived,
+    weightKg: row.weight_kg ?? 1,
   };
 }
 
@@ -98,6 +100,7 @@ export async function PATCH(request: Request) {
       highlights: payload.highlights,
       featured: payload.featured,
       archived: payload.archived,
+      weight_kg: payload.weightKg,
     })
     .eq("slug", payload.slug);
 
@@ -142,6 +145,7 @@ export async function POST(request: Request) {
     highlights: payload.highlights,
     featured: payload.featured,
     archived: payload.archived,
+    weight_kg: payload.weightKg,
   });
 
   if (error) {

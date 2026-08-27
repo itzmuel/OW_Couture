@@ -86,6 +86,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   code: product.code,
                   size: selectedSize,
                   unitPriceCents: parsePriceToCents(product.priceFrom),
+                  weightKg: product.weightKg,
                 })
               }
               className="rounded-full border border-black bg-black px-4 py-2.5 text-sm text-white transition hover:bg-neutral-900"
@@ -107,6 +108,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   size: selectedSize,
                   quantity: 1,
                   unitPriceCents: parsePriceToCents(product.priceFrom),
+                  weightKg: product.weightKg,
                 });
                 setIsOrderAdded(true);
                 window.setTimeout(() => setIsOrderAdded(false), 1400);

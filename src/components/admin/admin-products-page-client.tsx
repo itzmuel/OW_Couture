@@ -30,6 +30,7 @@ const emptyProduct: AdminProduct = {
   highlights: [],
   featured: false,
   archived: false,
+  weightKg: 1,
 };
 
 export function AdminProductsPageClient() {
@@ -228,6 +229,7 @@ export function AdminProductsPageClient() {
               <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Price From<input value={draft.priceFrom} onChange={(event) => setDraft((current) => ({ ...current, priceFrom: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
               <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Lead Time<input value={draft.leadTime} onChange={(event) => setDraft((current) => ({ ...current, leadTime: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             </div>
+            <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Weight (kg)<input type="number" min="0" step="0.1" value={draft.weightKg} onChange={(event) => setDraft((current) => ({ ...current, weightKg: Number(event.target.value) }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Appointment Type<input value={draft.appointmentType} onChange={(event) => setDraft((current) => ({ ...current, appointmentType: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <label className="grid min-w-0 gap-1 text-xs uppercase tracking-[0.08em] text-[var(--muted)]">Image URL<input value={draft.image} onChange={(event) => setDraft((current) => ({ ...current, image: event.target.value }))} className="min-w-0 w-full rounded-xl border border-[var(--line)] px-3 py-2 text-sm text-neutral-900" /></label>
             <div className="rounded-2xl border border-[var(--line)] p-4">

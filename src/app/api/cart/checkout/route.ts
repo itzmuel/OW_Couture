@@ -2,16 +2,22 @@ import { NextResponse } from "next/server";
 
 import { getCatalogProducts } from "@/lib/catalog/products";
 import { getStripeServerClient } from "@/lib/stripe/server";
+import { defaultShippingPlanContent } from "@/lib/admin/website";
+import { estimateShippingCostCents, type ShippingLocation } from "@/lib/shipping";
 
 type CartCheckoutItem = {
   code?: string;
   name?: string;
   size?: string;
   quantity?: number;
+  weightKg?: number;
 };
 
 type CartCheckoutRequest = {
   items?: CartCheckoutItem[];
+  deliveryLocation?: ShippingLocation;
+  shippingCostCents?: number;
+  totalWeightKg?: number;
 };
 
 function getBaseUrl(request: Request) {
@@ -76,6 +82,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Checkout items are missing product codes." }, { status: 400 });
   }
 
+  const deliveryLocation = payload.deliveryLocation;
+  if (
+    !deliveryLocation ||
+    !deliveryLocation.country?.trim() ||
+    !deliveryLocation.province?.trim() ||
+    !deliveryLocation.address?.trim() ||
+    !deliveryLocation.postalCode?.trim()
+  ) {
+    return NextResponse.json({ message: "Enter a complete delivery location to calculate shipping." }, { status: 400 });
+  }
+
   try {
     const stripe = getStripeServerClient();
     const products = await getCatalogProducts();
@@ -128,6 +145,16 @@ export async function POST(request: Request) {
       });
     });
 
+    const calculatedWeightKg = items.reduce((total, item) => {
+      const itemWeight = typeof item.weightKg === "number" && Number.isFinite(item.weightKg) && item.weightKg > 0 ? item.weightKg : 1;
+      return total + itemWeight * Math.max(1, Math.floor(item.quantity ?? 1));
+    }, 0);
+    const calculatedShippingCostCents = estimateShippingCostCents(calculatedWeightKg, deliveryLocation, defaultShippingPlanContent);
+
+    if (calculatedShippingCostCents === null) {
+      return NextResponse.json({ message: "No shipping rate is available for the selected delivery location." }, { status: 400 });
+    }
+
     if (invalidCodes.length > 0 || lineItems.length === 0) {
       return NextResponse.json(
         {
@@ -137,6 +164,22 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    lineItems.push({
+      quantity: 1,
+      price_data: {
+        currency: "cad",
+        unit_amount: calculatedShippingCostCents,
+        product_data: {
+          name: "Shipping",
+          description: `Delivery to ${deliveryLocation.region?.trim() || deliveryLocation.province.trim()}, ${deliveryLocation.country.trim()} | ${calculatedWeightKg.toFixed(1)} kg`,
+          metadata: {
+            productCode: "SHIPPING",
+            selectedSize: deliveryLocation.postalCode.trim(),
+          },
+        },
+      },
+    });
 
     const baseUrl = getBaseUrl(request);
     const session = await stripe.checkout.sessions.create({
@@ -148,6 +191,13 @@ export async function POST(request: Request) {
       line_items: lineItems,
       metadata: {
         source: "ow-couture-cart",
+        deliveryCountry: deliveryLocation.country.trim(),
+        deliveryProvince: deliveryLocation.province.trim(),
+        deliveryRegion: deliveryLocation.region?.trim() ?? "",
+        deliveryPostalCode: deliveryLocation.postalCode.trim(),
+        deliveryAddress: deliveryLocation.address.trim(),
+        shippingWeightKg: calculatedWeightKg.toFixed(1),
+        shippingCostCents: String(calculatedShippingCostCents),
       },
       success_url: `${baseUrl}/catalog?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/catalog?checkout=cancelled`,

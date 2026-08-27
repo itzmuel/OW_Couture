@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { useAdminAccess } from "@/components/admin/use-admin-access";
+import { defaultShippingPlanContent, type ShippingPlanContent, type ShippingPlanRow } from "@/lib/admin/website";
 import type { AdminSectionSlug } from "@/lib/admin/navigation";
 
 type OperationsSection = "shipping" | "inventory" | "gallery" | "reviews" | "marketing" | "settings";
@@ -169,11 +170,13 @@ export function AdminOperationsPageClient({ section }: { section: Extract<AdminS
   const [consultations, setConsultations] = useState<ConsultationsPayload["submissions"]>([]);
   const [customers, setCustomers] = useState<CustomersPayload["customers"]>([]);
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
+  const [shippingPlan, setShippingPlan] = useState<ShippingPlanContent>(defaultShippingPlanContent);
   const [allowedSections, setAllowedSections] = useState<string[]>([]);
   const [adminRole, setAdminRole] = useState("");
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavingShippingPlan, setIsSavingShippingPlan] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadSectionData = async () => {
@@ -181,16 +184,24 @@ export function AdminOperationsPageClient({ section }: { section: Extract<AdminS
     setErrorMessage("");
 
     if (section === "shipping") {
-      const response = await fetch("/api/admin/orders", { method: "GET", cache: "no-store" });
-      const payload = (await response.json()) as { message?: string } & OrdersPayload;
-      if (!response.ok) {
-        setErrorMessage(payload.message ?? "Unable to load shipping data.");
+      const [ordersResponse, shippingPlanResponse] = await Promise.all([
+        fetch("/api/admin/orders", { method: "GET", cache: "no-store" }),
+        fetch("/api/admin/shipping-plan", { method: "GET", cache: "no-store" }),
+      ]);
+
+      const ordersPayload = (await ordersResponse.json()) as { message?: string } & OrdersPayload;
+      const shippingPlanPayload = (await shippingPlanResponse.json()) as { message?: string; shippingPlan?: ShippingPlanContent };
+
+      if (!ordersResponse.ok || !shippingPlanResponse.ok) {
+        setErrorMessage(ordersPayload.message ?? shippingPlanPayload.message ?? "Unable to load shipping data.");
         setOrders([]);
+        setShippingPlan(defaultShippingPlanContent);
         setIsLoading(false);
         return;
       }
 
-      setOrders(payload.orders ?? []);
+      setOrders(ordersPayload.orders ?? []);
+      setShippingPlan(shippingPlanPayload.shippingPlan ?? defaultShippingPlanContent);
       setIsLoading(false);
       return;
     }
@@ -334,6 +345,40 @@ export function AdminOperationsPageClient({ section }: { section: Extract<AdminS
     return { dispatchRate, addressCompleteness };
   }, [orders.length, shippingSummary.delivered, shippingSummary.missingAddress, shippingSummary.ready]);
 
+  const updateShippingPlanRow = (rowIndex: number, field: keyof ShippingPlanRow, value: string) => {
+    setShippingPlan((current) => ({
+      ...current,
+      rows: current.rows.map((row, index) => (index === rowIndex ? { ...row, [field]: value } : row)),
+    }));
+  };
+
+  const saveShippingPlan = async () => {
+    if (!hasPermission("settings:manage")) {
+      return;
+    }
+
+    setIsSavingShippingPlan(true);
+    setErrorMessage("");
+
+    const response = await fetch("/api/admin/shipping-plan", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ shippingPlan }),
+    });
+
+    const payload = (await response.json()) as { message?: string; shippingPlan?: ShippingPlanContent };
+    if (!response.ok || !payload.shippingPlan) {
+      setErrorMessage(payload.message ?? "Unable to save shipping plan.");
+      setIsSavingShippingPlan(false);
+      return;
+    }
+
+    setShippingPlan(payload.shippingPlan);
+    setIsSavingShippingPlan(false);
+  };
+
   const inventoryInsights = useMemo(() => {
     const materialCounts = new Map<string, number>();
     products
@@ -472,6 +517,97 @@ export function AdminOperationsPageClient({ section }: { section: Extract<AdminS
 
       {!isLoading && section === "shipping" ? (
         <>
+          <section className="rounded-[24px] border border-[var(--line)] bg-white p-5 shadow-[0_10px_28px_rgba(0,0,0,0.03)] sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">Shipping information plan</p>
+                <h3 className="mt-2 text-xl tracking-[-0.03em] text-neutral-950">Editable rate card and delivery timeline</h3>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm text-[var(--muted)]">Base 2kg rate plus additional 1kg pricing</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void saveShippingPlan();
+                  }}
+                  disabled={isSavingShippingPlan || !hasPermission("settings:manage")}
+                  className="rounded-full border border-black bg-black px-4 py-2 text-xs uppercase tracking-[0.08em] text-white disabled:cursor-not-allowed disabled:border-neutral-300 disabled:bg-neutral-300"
+                >
+                  {isSavingShippingPlan ? "Saving..." : hasPermission("settings:manage") ? "Save shipping plan" : "View only"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 overflow-x-auto">
+              <table className="min-w-[1040px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--line)] text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
+                    <th className="px-2 py-3">Country</th>
+                    <th className="px-2 py-3">Province</th>
+                    <th className="px-2 py-3">Region</th>
+                    <th className="px-2 py-3">2kg</th>
+                    <th className="px-2 py-3">Additional 1kg</th>
+                    <th className="px-2 py-3">Timeline</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shippingPlan.rows.map((row, index) => (
+                    <tr key={`${row.country}-${row.province}-${row.region}-${index}`} className="border-b border-[var(--line)] align-top transition hover:bg-[var(--soft)]">
+                      <td className="px-2 py-3">
+                        <input
+                          value={row.country}
+                          onChange={(event) => updateShippingPlanRow(index, "country", event.target.value)}
+                          className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                          placeholder="Country"
+                        />
+                      </td>
+                      <td className="px-2 py-3">
+                        <input
+                          value={row.province}
+                          onChange={(event) => updateShippingPlanRow(index, "province", event.target.value)}
+                          className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                          placeholder="Province"
+                        />
+                      </td>
+                      <td className="px-2 py-3">
+                        <input
+                          value={row.region}
+                          onChange={(event) => updateShippingPlanRow(index, "region", event.target.value)}
+                          className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                          placeholder="Region"
+                        />
+                      </td>
+                      <td className="px-2 py-3">
+                        <input
+                          value={row.twoKg}
+                          onChange={(event) => updateShippingPlanRow(index, "twoKg", event.target.value)}
+                          className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                          placeholder="59"
+                        />
+                      </td>
+                      <td className="px-2 py-3">
+                        <input
+                          value={row.additionalOneKg}
+                          onChange={(event) => updateShippingPlanRow(index, "additionalOneKg", event.target.value)}
+                          className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                          placeholder="5.25"
+                        />
+                      </td>
+                      <td className="px-2 py-3">
+                        <input
+                          value={row.timeline}
+                          onChange={(event) => updateShippingPlanRow(index, "timeline", event.target.value)}
+                          className="w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-neutral-900"
+                          placeholder="up to 7 days"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <section className="grid gap-3 sm:grid-cols-3">
             <StatCard label="Ready to ship" value={shippingSummary.ready} detail="Orders queued for dispatch" />
             <StatCard label="Delivered" value={shippingSummary.delivered} detail="Completed handoffs" tone="good" />

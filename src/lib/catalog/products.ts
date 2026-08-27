@@ -25,6 +25,7 @@ type CatalogProductRow = {
   highlights: string[] | null;
   featured: boolean;
   archived: boolean;
+  weight_kg: number | null;
 };
 
 function toProduct(row: CatalogProductRow): Product {
@@ -45,6 +46,7 @@ function toProduct(row: CatalogProductRow): Product {
     madeFor: row.made_for ?? [],
     highlights: row.highlights ?? [],
     featured: row.featured,
+    weightKg: row.weight_kg ?? 1,
   };
 }
 
@@ -54,7 +56,7 @@ export async function getCatalogProducts(): Promise<Product[]> {
     const { data, error } = await adminClient
       .from("catalog_products")
       .select(
-        "slug,name,code,category,collection,tagline,description,price_from,lead_time,appointment_type,image,palette,materials,made_for,highlights,featured,archived",
+        "slug,name,code,category,collection,tagline,description,price_from,lead_time,appointment_type,image,palette,materials,made_for,highlights,featured,archived,weight_kg",
       )
       .eq("archived", false)
       .order("featured", { ascending: false })
@@ -70,7 +72,7 @@ export async function getCatalogProducts(): Promise<Product[]> {
   }
 }
 
-export async function getCatalogProductBySlug(slug: string): Promise<Product | undefined> {
+          "slug,name,code,category,collection,tagline,description,price_from,lead_time,appointment_type,image,palette,materials,made_for,highlights,featured,archived,weight_kg",
   const products = await getCatalogProducts();
   return products.find((product) => product.slug === slug) ?? getStaticProductBySlug(slug);
 }
