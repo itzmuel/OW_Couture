@@ -32,7 +32,7 @@ const homeNav: NavItem[] = [
   { href: "/consultation", label: "Book Consultation", match: (pathname) => pathname === "/consultation" },
   { href: "/admin", label: "Admin", match: (pathname) => pathname.startsWith("/admin") },
   { href: "/#about", label: "About Us", match: () => false },
-  { href: "/#contact", label: "Contact", match: () => false },
+  { href: "/contact", label: "Contact", match: (pathname) => pathname === "/contact" },
 ];
 
 const collectionNav: NavItem[] = [
@@ -99,6 +99,7 @@ export const searchablePages: SearchPageLink[] = [
   { label: "Bridesmaids & Evening", href: "/collections/evening" },
   { label: "Catalog", href: "/catalog" },
   { label: "Consultation", href: "/consultation" },
+  { label: "Contact", href: "/contact" },
   { label: "Admin", href: "/admin" },
   { label: "Account", href: "/account" },
   { label: "Log in", href: "/auth/login" },

@@ -46,6 +46,12 @@ const sectionContent: Record<Exclude<AdminSectionSlug, "consultations">, Section
     modules: ["Customer records", "VIP segmentation", "Order history", "Consultation history", "Value insights"],
     primaryActionLabel: "Add customer note",
   },
+  contacts: {
+    title: "Contacts",
+    description: "Review inbound contact messages and prioritize responses from the website contact form.",
+    modules: ["Message inbox", "Customer details", "Response priority", "Contact history", "Follow-up notes"],
+    primaryActionLabel: "Open contact inbox",
+  },
   measurements: {
     title: "Measurements",
     description: "Store detailed body measurements with version history for repeat fittings and accuracy over time.",
