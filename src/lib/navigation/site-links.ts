@@ -115,7 +115,7 @@ export const footerContent: FooterContent = {
   heading: "Made to order. Made for you.",
   studioTitle: "Studio",
   studioDescription:
-    "Refined bridal, ready-to-wear, bridesmaids, and evening pieces created through a personal made-to-order process.",
+    "Refined bridal, ready-to-wear, bridesmaids, and evening pieces created through a personal made-to-order process. Made in Ontario.",
   digitalTitle: "Digital touchpoints",
-  digitalTouchpoints: ["hello@owcouture.ca", "@OWCouture"],
+  digitalTouchpoints: ["hello@owcouture.ca", "Instagram: @OWCouture", "TikTok: @OWCouture"],
 };
