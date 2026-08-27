@@ -65,6 +65,7 @@ export function AdminTeamPageClient() {
           "team:view",
           "team:manage",
           "settings:view",
+          "settings:manage",
         ] satisfies AdminPermission[],
       },
     ];

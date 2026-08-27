@@ -30,7 +30,8 @@ export type AdminPermission =
   | "website:manage"
   | "team:view"
   | "team:manage"
-  | "settings:view";
+  | "settings:view"
+  | "settings:manage";
 
 export const allAdminPermissions: AdminPermission[] = [
   "admin:*",
@@ -57,6 +58,7 @@ export const allAdminPermissions: AdminPermission[] = [
   "team:view",
   "team:manage",
   "settings:view",
+  "settings:manage",
 ];
 
 export const permissionLabels: Record<AdminPermission, string> = {
@@ -84,6 +86,7 @@ export const permissionLabels: Record<AdminPermission, string> = {
   "team:view": "View team",
   "team:manage": "Manage team",
   "settings:view": "View settings",
+  "settings:manage": "Manage settings",
 };
 
 export const defaultRolePermissions: Record<AdminTeamMember["role"], AdminPermission[]> = {
@@ -107,6 +110,8 @@ export const defaultRolePermissions: Record<AdminTeamMember["role"], AdminPermis
     "analytics:view",
     "website:view",
     "website:manage",
+    "settings:view",
+    "settings:manage",
   ],
   Tailor: ["dashboard:view", "orders:view", "production:view", "production:manage", "measurements:view", "customers:view"],
   "Customer Service": ["dashboard:view", "orders:view", "consultations:view", "consultations:manage", "customers:view", "payments:view"],
