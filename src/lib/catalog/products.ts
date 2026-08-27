@@ -72,7 +72,7 @@ export async function getCatalogProducts(): Promise<Product[]> {
   }
 }
 
-          "slug,name,code,category,collection,tagline,description,price_from,lead_time,appointment_type,image,palette,materials,made_for,highlights,featured,archived,weight_kg",
+export async function getCatalogProductBySlug(slug: string): Promise<Product | undefined> {
   const products = await getCatalogProducts();
   return products.find((product) => product.slug === slug) ?? getStaticProductBySlug(slug);
 }
