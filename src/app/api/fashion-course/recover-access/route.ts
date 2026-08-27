@@ -304,6 +304,7 @@ export async function POST(request: Request) {
       verified: true,
       registrationId: target.id,
       assessmentCompleted,
+      assessmentScore: target.assessment_score ?? 0,
       receipt: buildReceipt(target),
       message: assessmentCompleted
         ? "Payment found. Your assessment was already submitted."

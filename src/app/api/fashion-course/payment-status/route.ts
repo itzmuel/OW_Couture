@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+type RegistrationRow = {
+  assessment_answers: Record<string, string> | null;
+  assessment_score: number | null;
+};
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const sessionId = url.searchParams.get("session_id")?.trim();
@@ -25,6 +30,21 @@ export async function GET(request: Request) {
     const amountTotalCents = session.amount_total ?? 0;
     const adminClient = createSupabaseAdminClient();
 
+    const { data: registrationData, error: registrationError } = await adminClient
+      .from("fashion_course_registrations")
+      .select("assessment_answers,assessment_score")
+      .eq("id", registrationId)
+      .maybeSingle();
+
+    if (registrationError) {
+      return NextResponse.json({ message: registrationError.message }, { status: 500 });
+    }
+
+    const registration = (registrationData ?? null) as RegistrationRow | null;
+    const assessmentCompleted =
+      (registration?.assessment_score ?? 0) > 0 ||
+      (registration?.assessment_answers !== null && Object.keys(registration?.assessment_answers ?? {}).length > 0);
+
     const { error: updateError } = await adminClient
       .from("fashion_course_registrations")
       .update({
@@ -43,6 +63,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       verified: isPaid,
       registrationId,
+      assessmentCompleted,
+      assessmentScore: registration?.assessment_score ?? 0,
       receipt: isPaid
         ? {
             checkoutSessionId: session.id,

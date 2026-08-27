@@ -7,6 +7,13 @@ type AssessmentRequest = {
   assessmentAnswers?: Record<string, string>;
 };
 
+type RegistrationRow = {
+  id: string;
+  payment_status: string;
+  assessment_answers: Record<string, string> | null;
+  assessment_score: number | null;
+};
+
 const answerKey: Record<string, string> = {
   q1: "B",
   q2: "C",
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
 
   const { data: registration, error: registrationError } = await adminClient
     .from("fashion_course_registrations")
-    .select("id,payment_status")
+    .select("id,payment_status,assessment_answers,assessment_score")
     .eq("id", registrationId)
     .maybeSingle();
 
@@ -64,8 +71,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: registrationError?.message ?? "Registration not found." }, { status: 404 });
   }
 
-  if (registration.payment_status !== "paid") {
+  const existingRegistration = registration as RegistrationRow;
+
+  if (existingRegistration.payment_status !== "paid") {
     return NextResponse.json({ message: "Assessment unlocks only after successful payment." }, { status: 400 });
+  }
+
+  const assessmentCompleted =
+    (existingRegistration.assessment_score ?? 0) > 0 ||
+    (existingRegistration.assessment_answers !== null && Object.keys(existingRegistration.assessment_answers).length > 0);
+
+  if (assessmentCompleted) {
+    return NextResponse.json(
+      {
+        message: "Your assessment has already been submitted.",
+        assessmentCompleted: true,
+        assessmentScore: existingRegistration.assessment_score ?? 0,
+      },
+      { status: 409 },
+    );
   }
 
   const { error: updateError } = await adminClient
@@ -80,5 +104,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ message: `Assessment submitted successfully. Score: ${assessmentScore}/10.` }, { status: 200 });
+  return NextResponse.json(
+    {
+      message: "Assessment submitted successfully.",
+      assessmentCompleted: true,
+      assessmentScore,
+    },
+    { status: 200 },
+  );
 }

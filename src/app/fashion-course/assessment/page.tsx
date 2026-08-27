@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type PaymentReceipt = {
@@ -92,6 +93,7 @@ function formatCad(cents: number) {
 }
 
 export default function FashionCourseAssessmentPage() {
+  const router = useRouter();
   const [registrationId, setRegistrationId] = useState("");
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
   const [isPaymentVerified, setIsPaymentVerified] = useState(false);
@@ -112,6 +114,7 @@ export default function FashionCourseAssessmentPage() {
     message?: string;
     receipt?: PaymentReceipt | null;
     assessmentCompleted?: boolean;
+    assessmentScore?: number;
   }) => {
     if (!payload.registrationId) {
       return;
@@ -123,8 +126,7 @@ export default function FashionCourseAssessmentPage() {
     setPaymentNotice(payload.message ?? "Payment confirmed. Assessment unlocked.");
 
     if (payload.assessmentCompleted) {
-      setAssessmentState("success");
-      setAssessmentMessage("Assessment already submitted for this registration.");
+      router.replace(`/fashion-course/assessment/after?score=${encodeURIComponent(String(payload.assessmentScore ?? 0))}`);
     }
   };
 
@@ -151,6 +153,8 @@ export default function FashionCourseAssessmentPage() {
         registrationId?: string;
         message?: string;
         receipt?: PaymentReceipt | null;
+        assessmentCompleted?: boolean;
+        assessmentScore?: number;
       };
 
       if (!response.ok || !payload.verified || !payload.registrationId) {
@@ -318,17 +322,26 @@ export default function FashionCourseAssessmentPage() {
                   }),
                 });
 
-                const payload = (await response.json()) as { message?: string };
+                const payload = (await response.json()) as {
+                  message?: string;
+                  assessmentCompleted?: boolean;
+                  assessmentScore?: number;
+                };
 
                 if (!response.ok) {
+                  if (response.status === 409 && payload.assessmentCompleted) {
+                    router.replace(`/fashion-course/assessment/after?score=${encodeURIComponent(String(payload.assessmentScore ?? 0))}`);
+                    setIsAssessmentSubmitting(false);
+                    return;
+                  }
+
                   setAssessmentState("error");
                   setAssessmentMessage(payload.message ?? "Unable to submit assessment right now.");
                   setIsAssessmentSubmitting(false);
                   return;
                 }
 
-                setAssessmentState("success");
-                setAssessmentMessage(payload.message ?? "Assessment submitted successfully.");
+                router.replace(`/fashion-course/assessment/after?score=${encodeURIComponent(String(payload.assessmentScore ?? 0))}`);
                 setIsAssessmentSubmitting(false);
               }}
             >
@@ -356,10 +369,6 @@ export default function FashionCourseAssessmentPage() {
 
               {assessmentState === "error" ? (
                 <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{assessmentMessage}</p>
-              ) : null}
-
-              {assessmentState === "success" ? (
-                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{assessmentMessage}</p>
               ) : null}
 
               <button
