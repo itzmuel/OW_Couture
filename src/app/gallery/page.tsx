@@ -15,7 +15,7 @@ const galleryCards = [
   },
   {
     title: "OW Couture Magazine 2",
-    description: "Second issue pages grouped as one complete magazine set.",
+    description: "A full run of our second issue, styled as one complete story.",
     images: [
       "/gallery/magazine 2/IMG_3153.PNG",
       "/gallery/magazine 2/IMG_3154.PNG",
@@ -25,7 +25,7 @@ const galleryCards = [
   },
   {
     title: "RTW Editorial",
-    description: "Lookbook shots for current ready-to-wear drops.",
+    description: "Editorial frames from the current ready-to-wear chapter.",
     images: [
       "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80",
@@ -34,7 +34,7 @@ const galleryCards = [
   },
   {
     title: "Client Celebrations",
-    description: "Multiple client moments grouped by occasion.",
+    description: "Client moments, from first fitting to final celebration.",
     images: [
       "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1200&q=80",
@@ -212,9 +212,9 @@ export default function GalleryPage() {
       <main className="border-b border-[var(--line)] py-16 sm:py-20">
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Gallery</p>
-          <h1 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">Gallery stories in image sets.</h1>
+          <h1 className="text-[clamp(34px,5vw,64px)] leading-[1] tracking-[-0.055em] text-neutral-950">A visual diary of the house.</h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--muted)] sm:text-lg">
-            Each card can hold multiple images, making it easy to group moments from the same fitting, event, or collection launch.
+            A curated edit from fittings, launches, and the moments in between.
           </p>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
@@ -319,7 +319,7 @@ export default function GalleryPage() {
                 <div className="px-1 pb-1 pt-5">
                   <h2 className="text-3xl tracking-[-0.04em] text-neutral-950">{card.title}</h2>
                   <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{card.description}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Tap any image to view the full set.</p>
+                  <p className="mt-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Open any frame to view the full edit.</p>
                 </div>
               </article>
             ))}
@@ -389,7 +389,7 @@ export default function GalleryPage() {
               </div>
 
               <p className="mt-2 text-xs uppercase tracking-[0.14em] text-white/45">
-                Swipe on mobile or use arrows to move through the set.
+                Swipe on mobile or use arrows to move through the edit.
               </p>
 
               <div className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-6">

@@ -9,19 +9,19 @@ export const metadata: Metadata = {
 const collectionCards = [
   {
     title: "Wedding",
-    description: "Order, bespoke service, or customize.",
+    description: "Bridal looks shaped around your ceremony, silhouette, and story.",
     href: "/collections/wedding",
     image: "https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=900&q=80",
   },
   {
     title: "RTW",
-    description: "Pre-order and customize selected pieces.",
+    description: "Refined ready-to-wear with room for personal tailoring.",
     href: "/collections/rtw",
     image: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=80",
   },
   {
     title: "Evening",
-    description: "Bridesmaids and occasionwear.",
+    description: "Evening statements for bridesmaids, guests, and after-dark moments.",
     href: "/collections/evening",
     image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=900&q=80",
   },
@@ -36,7 +36,7 @@ export default function CollectionPage() {
             <p className="text-xs uppercase tracking-[0.16em] text-white/75">Now Open</p>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
               <p className="max-w-3xl text-base leading-7 sm:text-lg">
-                Registration is open for the 8-week Fashion Design Course. Classes start in October 2026 and registration closes September 30, 2026.
+                Registration is open for our 8-week Fashion Design Course. The cohort begins in October 2026, with enrollment closing September 30, 2026.
               </p>
               <Link
                 href="/fashion-course"

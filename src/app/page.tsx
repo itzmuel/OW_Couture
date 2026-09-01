@@ -7,19 +7,25 @@ import { BrandLogo } from "@/components/brand-logo";
 import { defaultHomepageContent, type HomepageContent } from "@/lib/admin/website";
 
 const galleryImages = [
-  "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80",
+  "/IMG_2581.jpg",
+  "/IMG_1662.jpg",
+  "/IMG_2704.jpg",
+  "/IMG_2583.PNG",
 ];
 
-const instagramImages = [
-  "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1594552072238-b8a33785b261?auto=format&fit=crop&w=900&q=80",
+const socialProfiles = [
+  {
+    platform: "Instagram",
+    handle: "@OWCouture",
+    href: "https://www.instagram.com/owcouture/",
+    icon: "instagram" as const,
+  },
+  {
+    platform: "TikTok",
+    handle: "@OWCouture",
+    href: "https://www.tiktok.com/@owcouture",
+    icon: "tiktok" as const,
+  },
 ];
 
 export default function Home() {
@@ -90,10 +96,10 @@ export default function Home() {
           <div className="w-full max-w-lg rounded-[28px] border border-[var(--line)] bg-white p-6 shadow-[0_30px_90px_rgba(0,0,0,0.25)] sm:p-8">
             <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Bookmark OW Couture</p>
             <h2 className="mt-3 text-[clamp(28px,4vw,42px)] leading-[1.02] tracking-[-0.045em] text-neutral-950">
-              Save us so you can come back to your personalized shopping experience.
+              Save OW Couture for your next fitting, custom order, and collection drop.
             </h2>
             <p className="mt-4 text-sm leading-7 text-neutral-700">
-              Bookmark this site now so you can easily return to your made-to-order pieces, gallery, and private consultation flow.
+              Keep us one tap away for made-to-order pieces, private consultations, and studio updates.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <button
@@ -127,7 +133,7 @@ export default function Home() {
       >
         <div
           aria-hidden="true"
-          className="absolute inset-0 scale-[1.08] bg-[linear-gradient(rgba(0,0,0,0.18),rgba(0,0,0,0.34)),url('https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center"
+          className="absolute inset-0 scale-[1.08] bg-[linear-gradient(rgba(0,0,0,0.18),rgba(0,0,0,0.34)),url('/IMG_7293.jpg')] bg-cover bg-center"
           style={{ transform: `translate3d(0, ${Math.min(heroOffset * 0.28, 96)}px, 0) scale(1.08)` }}
         />
         <div className="mx-auto flex min-h-[82vh] w-full max-w-[1180px] items-center justify-center px-4 text-center sm:px-6 lg:px-8">
@@ -148,7 +154,7 @@ export default function Home() {
         <div className="mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8">
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Gallery</p>
           <h2 className="text-[clamp(30px,4vw,52px)] font-black leading-[1.02] tracking-[-0.045em] text-neutral-950">
-            Signature pieces, captured in detail.
+            A closer look at cut, drape, and finish.
           </h2>
           <div className="flex justify-end">
             <Link
@@ -183,12 +189,37 @@ export default function Home() {
             </p>
           </div>
           <div data-scroll-reveal data-scroll-direction="right" className="rounded-[30px] border border-[var(--line)] bg-[rgba(250,250,250,0.7)] p-7">
-            <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Instagram</p>
-            <div className="mt-5 grid gap-3 grid-cols-2 sm:grid-cols-3">
-              {instagramImages.map((image, index) => (
-                <div key={image} data-scroll-reveal data-scroll-delay={80 + index * 55} className="overflow-hidden rounded-[20px]">
-                  <img src={image} alt={`Instagram look ${index + 1}`} className="h-36 w-full object-cover transition duration-300 hover:scale-[1.03]" />
-                </div>
+            <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Socials</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {socialProfiles.map((profile, index) => (
+                <a
+                  key={profile.platform}
+                  href={profile.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-scroll-reveal
+                  data-scroll-delay={80 + index * 90}
+                  className="group flex items-center gap-4 rounded-[20px] border border-[var(--line)] bg-white p-4 transition duration-300 hover:-translate-y-0.5 hover:border-black"
+                  aria-label={`Open OW Couture on ${profile.platform}`}
+                >
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-300 bg-[var(--soft)] text-black transition group-hover:border-black">
+                    {profile.icon === "instagram" ? (
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+                        <circle cx="12" cy="12" r="4" />
+                        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                      </svg>
+                    ) : (
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+                        <path d="M15.6 3.2c1 .9 2.2 1.5 3.6 1.7v3.1a8.9 8.9 0 0 1-3.6-.8v6.2a5.4 5.4 0 1 1-4.5-5.3v3.2a2.3 2.3 0 1 0 1.4 2.1V2h3.1z" />
+                      </svg>
+                    )}
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold uppercase tracking-[0.1em] text-neutral-900">{profile.platform}</span>
+                    <span className="block text-sm text-[var(--muted)]">{profile.handle}</span>
+                  </span>
+                </a>
               ))}
             </div>
           </div>

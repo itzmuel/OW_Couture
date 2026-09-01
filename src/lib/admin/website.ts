@@ -24,12 +24,12 @@ export type ShippingPlanContent = {
 
 export const defaultHomepageContent: HomepageContent = {
   heroTitle: "OW Couture.",
-  heroSubtitle: "Made to order. Made for you.",
-  aboutTitle: "Not fast fashion. Lasting fashion.",
+  heroSubtitle: "Made to order, cut for your story.",
+  aboutTitle: "Craft over trends. Form that lasts.",
   aboutBody:
-    "OW Couture is a made-to-order fashion house creating refined bridal, ready-to-wear, bridesmaids, and evening pieces. Our process is personal, intentional, and tailored around the woman wearing the garment.",
-  testimonialTitle: "Obsessed with your experience.",
-  testimonialBody: "Timeless pieces. Your favourite outfit waiting to happen. Bringing dreams to reality.",
+    "OW Couture is a made-to-order house shaping bridal, ready-to-wear, bridesmaids, and evening pieces with intention. Every silhouette is developed around the woman wearing it, from first consultation to final finish.",
+  testimonialTitle: "Loved in every detail.",
+  testimonialBody: "From fitting room to final look, each piece is built to feel effortless, precise, and distinctly yours.",
   contactTitle: "Contact",
   contactBody: "Email: hello@owcouture.ca\nInstagram: @OWCouture",
 };
