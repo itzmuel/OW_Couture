@@ -71,7 +71,7 @@ export async function GET(request: Request) {
             currency: (session.currency ?? "cad").toUpperCase(),
             amountTotalCents,
             lineItems: [
-              { label: "Course registration deposit", amountCents: 5000 },
+              { label: "Course registration fee", amountCents: 99999 },
               ...(wantsMaterialsKit ? [{ label: "Optional materials package", amountCents: 30000 }] : []),
             ],
             refundPolicy:

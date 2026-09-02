@@ -28,7 +28,7 @@ type RegistrationRow = {
   assessment_score: number | null;
 };
 
-const courseDepositFeeCents = 5000;
+const courseDepositFeeCents = 99999;
 const materialsKitFeeCents = 30000;
 const cooldownMs = 20_000;
 const rollingWindowMs = 10 * 60_000;
@@ -164,7 +164,7 @@ function buildReceipt(row: RegistrationRow) {
     currency: "CAD",
     amountTotalCents,
     lineItems: [
-      { label: "Course registration deposit", amountCents: courseDepositFeeCents },
+      { label: "Course registration fee", amountCents: courseDepositFeeCents },
       ...(row.wants_materials_kit ? [{ label: "Optional materials package", amountCents: materialsKitFeeCents }] : []),
     ],
     refundPolicy:

@@ -13,7 +13,7 @@ type FashionCourseRegistrationRequest = {
   wantsMaterialsKit?: boolean;
 };
 
-const courseDepositFeeCents = 5000;
+const courseDepositFeeCents = 99999;
 const materialsKitFeeCents = 30000;
 
 function getBaseUrl(request: Request) {
@@ -115,8 +115,8 @@ export async function POST(request: Request) {
           currency: "cad",
           unit_amount: courseDepositFeeCents,
           product_data: {
-            name: "OW Fashion Course Registration Deposit",
-            description: "Deposit required to unlock the Basic Skills Assessment",
+            name: "OW Fashion Course Registration",
+            description: "Course payment required to unlock the Basic Skills Assessment",
           },
         },
       },

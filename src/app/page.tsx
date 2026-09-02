@@ -16,14 +16,14 @@ const galleryImages = [
 const socialProfiles = [
   {
     platform: "Instagram",
-    handle: "@OWCouture",
-    href: "https://www.instagram.com/owcouture/",
+    handle: "@ow_couture",
+    href: "https://www.instagram.com/ow_couture?igsi=dGNkbXFqZG55bGRj",
     icon: "instagram" as const,
   },
   {
     platform: "TikTok",
-    handle: "@OWCouture",
-    href: "https://www.tiktok.com/@owcouture",
+    handle: "@ow.couture",
+    href: "https://www.tiktok.com/@ow.couture?_r=1",
     icon: "tiktok" as const,
   },
 ];

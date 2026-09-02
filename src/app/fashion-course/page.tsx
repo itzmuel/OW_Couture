@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const courseDepositFeeCents = 5000;
+const courseDepositFeeCents = 99999;
 const materialsKitFeeCents = 30000;
 
 const learningOutcomes = [
