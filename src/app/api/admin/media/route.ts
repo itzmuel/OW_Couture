@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
 
 import { NextResponse } from "next/server";
 
@@ -13,7 +15,50 @@ type MediaAsset = {
   url: string;
   name: string;
   createdAt: string | null;
+  source: "gallery" | "media-library";
+  deletable: boolean;
 };
+
+const imageExtensions = new Set([".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"]);
+
+async function listPublicGalleryAssets(): Promise<MediaAsset[]> {
+  const galleryRoot = path.join(process.cwd(), "public", "gallery");
+
+  async function walk(directory: string): Promise<MediaAsset[]> {
+    const entries = await readdir(directory, { withFileTypes: true });
+    const assets: MediaAsset[] = [];
+
+    for (const entry of entries) {
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        assets.push(...(await walk(absolutePath)));
+        continue;
+      }
+
+      if (!imageExtensions.has(path.extname(entry.name).toLowerCase())) {
+        continue;
+      }
+
+      const relativePath = path.relative(path.join(process.cwd(), "public"), absolutePath).split(path.sep).join("/");
+      assets.push({
+        path: relativePath,
+        url: `/${relativePath}`,
+        name: relativePath,
+        createdAt: null,
+        source: "gallery",
+        deletable: false,
+      });
+    }
+
+    return assets;
+  }
+
+  try {
+    return await walk(galleryRoot);
+  } catch {
+    return [];
+  }
+}
 
 async function ensureMediaBucket() {
   const adminClient = createSupabaseAdminClient();
@@ -67,7 +112,7 @@ export async function GET() {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
-  const assets: MediaAsset[] = (data ?? [])
+  const mediaLibraryAssets: MediaAsset[] = (data ?? [])
     .filter((item) => !item.id?.endsWith("/"))
     .map((item) => {
       const { data: urlData } = bucketResult.adminClient.storage.from(mediaBucketName).getPublicUrl(item.name);
@@ -76,8 +121,13 @@ export async function GET() {
         url: urlData.publicUrl,
         name: item.name,
         createdAt: item.created_at ?? null,
+        source: "media-library" as const,
+        deletable: true,
       };
     });
+
+  const galleryAssets = await listPublicGalleryAssets();
+  const assets = [...galleryAssets, ...mediaLibraryAssets];
 
   return NextResponse.json({ assets });
 }
@@ -148,6 +198,10 @@ export async function DELETE(request: Request) {
   const payload = (await request.json()) as { path?: string };
   if (!payload.path) {
     return NextResponse.json({ message: "Media path is required." }, { status: 400 });
+  }
+
+  if (payload.path.startsWith("gallery/")) {
+    return NextResponse.json({ message: "Published gallery files must be removed from the project gallery folder." }, { status: 400 });
   }
 
   const bucketResult = await ensureMediaBucket();

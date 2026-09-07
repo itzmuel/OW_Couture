@@ -65,6 +65,8 @@ type MediaAsset = {
   url: string;
   name: string;
   createdAt?: string | null;
+  source?: "gallery" | "media-library";
+  deletable?: boolean;
 };
 
 function formatDate(value: string | null | undefined) {
@@ -737,10 +739,10 @@ export function AdminOperationsPageClient({ section }: { section: Extract<AdminS
                         onClick={() => {
                           void removeAsset(asset.path);
                         }}
-                        disabled={!hasPermission("website:manage")}
+                        disabled={!hasPermission("website:manage") || asset.deletable === false}
                         className="rounded-full border border-red-300 px-3 py-1 text-xs text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Delete
+                        {asset.deletable === false ? "Published" : "Delete"}
                       </button>
                     </div>
                   </div>
