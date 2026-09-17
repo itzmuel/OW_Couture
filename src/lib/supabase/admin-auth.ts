@@ -59,28 +59,12 @@ export async function ensureAdminUser(requiredPermission?: AdminPermission): Pro
     };
   }
 
-  const allowedEmails = getAllowedAdminEmails();
-  if (allowedEmails.length === 0) {
-    return {
-      ok: false,
-      status: 500,
-      message: "ADMIN_EMAILS is not configured.",
-    };
-  }
-
-  if (!allowedEmails.includes(user.email.toLowerCase())) {
-    return {
-      ok: false,
-      status: 403,
-      message: "You are not allowed to access admin data.",
-    };
-  }
-
+  const normalizedEmail = user.email.toLowerCase();
   const adminClient = createSupabaseAdminClient();
   const { data: teamMemberData, error: teamMemberError } = await adminClient
     .from("admin_team_members")
     .select("email,full_name,role,permissions,active")
-    .eq("email", user.email.toLowerCase())
+    .eq("email", normalizedEmail)
     .maybeSingle();
 
   if (teamMemberError) {
@@ -92,9 +76,6 @@ export async function ensureAdminUser(requiredPermission?: AdminPermission): Pro
   }
 
   const teamMember = teamMemberData as TeamRow | null;
-  const role = teamMember?.role ?? "Admin";
-  const permissions = teamMember?.permissions?.length ? teamMember.permissions : defaultRolePermissions[role];
-
   if (teamMember && !teamMember.active) {
     return {
       ok: false,
@@ -102,6 +83,17 @@ export async function ensureAdminUser(requiredPermission?: AdminPermission): Pro
       message: "Your admin access is inactive.",
     };
   }
+
+  if (!teamMember && !isAdminEmail(normalizedEmail)) {
+    return {
+      ok: false,
+      status: 403,
+      message: "You are not allowed to access admin data.",
+    };
+  }
+
+  const role = teamMember?.role ?? "Admin";
+  const permissions = teamMember?.permissions?.length ? teamMember.permissions : defaultRolePermissions[role];
 
   if (!hasAdminPermission(permissions, requiredPermission)) {
     return {
@@ -113,7 +105,7 @@ export async function ensureAdminUser(requiredPermission?: AdminPermission): Pro
 
   return {
     ok: true,
-    email: user.email,
+    email: normalizedEmail,
     role,
     permissions,
   };
